@@ -41,25 +41,30 @@ Proiect_RN/
 
 ### 2.1 Sursa datelor
 
-* **Origine:** [Descriere sursă date - ex: senzori robot, dataset public, simulare]
-* **Modul de achiziție:** ☐ Senzori reali / ☐ Simulare / ☐ Fișier extern / ☐ Generare programatică
-* **Perioada / condițiile colectării:** [Ex: Noiembrie 2024 - Ianuarie 2025, condiții experimentale specifice]
+* **Origine:** Senzori vehicule
+* **Modul de achiziție:** ☐ Senzori reali / X Simulare / ☐ Fișier extern / X Generare programatică
+* **Perioada / condițiile colectării:** Noiembrie 2025
 
 ### 2.2 Caracteristicile dataset-ului
 
-* **Număr total de observații:** [Ex: 15,000]
-* **Număr de caracteristici (features):** [Ex: 12]
-* **Tipuri de date:** ☐ Numerice / ☐ Categoriale / ☐ Temporale / ☐ Imagini
-* **Format fișiere:** ☐ CSV / ☐ TXT / ☐ JSON / ☐ PNG / ☐ Altele: [...]
+* **Număr total de observații:** 1000
+* **Număr de caracteristici (features):** 7
+* **Tipuri de date:** X Numerice / ☐ Categoriale / ☐ Temporale / ☐ Imagini
+* **Format fișiere:** X CSV / ☐ TXT / ☐ JSON / ☐ PNG / ☐ Altele: [...]
 
 ### 2.3 Descrierea fiecărei caracteristici
 
 | **Caracteristică** | **Tip** | **Unitate** | **Descriere** | **Domeniu valori** |
 |-------------------|---------|-------------|---------------|--------------------|
-| feature_1 | numeric | mm | [...] | 0–150 |
-| feature_2 | categorial | – | [...] | {A, B, C} |
-| feature_3 | numeric | m/s | [...] | 0–2.5 |
-| ... | ... | ... | ... | ... |
+| feature_1 | numeric | mm | [...] |  |
+| feature_2 | numeric | mm | [...] |  |
+| feature_3 | numeric | mm | [...] |  |
+| feature_4 | numeric | mm | [...] |  |
+| feature_5 | numeric | mm | [...] |  |
+| feature_6 | numeric | mm | [...] |  |
+| feature_7 | numeric | mm | [...] |  |
+
+
 
 **Fișier recomandat:**  `data/README.md`
 
