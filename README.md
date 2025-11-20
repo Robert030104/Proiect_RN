@@ -2,8 +2,8 @@
 
 **Disciplina:** Rețele Neuronale  
 **Instituție:** POLITEHNICA București – FIIR  
-**Student:** [Nume Prenume]  
-**Data:** [Data]  
+**Student:** Pintea Robert Stefan  
+**Data:** 20/11/2025  
 
 
 ---
@@ -17,7 +17,7 @@ Acest document descrie activitățile realizate în **Etapa 3**, în care se ana
 ##  1. Structura Repository-ului Github (versiunea Etapei 3)
 
 ```
-project-name/
+Proiect_RN/
 ├── README.md
 ├── docs/
 │   └── datasets/          # descriere seturi de date, surse, diagrame
