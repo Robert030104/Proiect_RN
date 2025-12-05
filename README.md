@@ -54,16 +54,19 @@ Proiect_RN/
 
 ### 2.3 Descrierea fiecărei caracteristici
 
-| **Caracteristică** | **Tip** | **Unitate** | **Descriere** | **Domeniu valori** |
-|-------------------|---------|-------------|---------------|--------------------|
-| feature_1 | numeric | mm | [...] |  |
-| feature_2 | numeric | mm | [...] |  |
-| feature_3 | numeric | mm | [...] |  |
-| feature_4 | numeric | mm | [...] |  |
-| feature_5 | numeric | mm | [...] |  |
-| feature_6 | numeric | mm | [...] |  |
-| feature_7 | numeric | mm | [...] |  |
-
+| Caracteristica        | Tip     | Unitate | Descriere                         | Domeniu valori    |
+|-----------------------|---------|---------|-----------------------------------|-------------------|
+| km                    | numeric | km      | Kilometraj total al vehiculului   | 10000 - 300000    |
+| vechime_ani           | numeric | ani     | Varsta vehiculului                | 1 - 20            |
+| temperatura_motor     | numeric | °C      | Temp. lichid racire               | 60 - 130          |
+| temperatura_ulei      | numeric | °C      | Temp. ulei motor                  | 60 - 150          |
+| presiune_ulei         | numeric | psi     | Presiune ulei                     | 10 - 80           |
+| vibratii              | numeric | mm/s    | Nivel vibratii                    | 0.1 - 3.0         |
+| ore_de_la_revizie     | numeric | ore     | Ore de la ultima revizie          | 0 - 600           |
+| km_de_la_schimb_ulei  | numeric | km      | Km de la schimb ulei              | 0 - 30000         |
+| maf                   | numeric | g/s     | Debit aer MAF                     | 5 - 400           |
+| map                   | numeric | kPa     | Presiune MAP                      | 20 - 120          |
+| defect                | numeric | 0/1     | 1 = defect, 0 = normal            | 0 sau 1           |
 
 
 **Fișier recomandat:**  `data/README.md`
@@ -74,22 +77,16 @@ Proiect_RN/
 
 ### 3.1 Statistici descriptive aplicate
 
-* **Medie, mediană, deviație standard**
-* **Min–max și quartile**
-* **Distribuții pe caracteristici** (histograme)
-* **Identificarea outlierilor** (IQR / percentile)
+În această etapă au fost aplicate statistici descriptive asupra variabilelor din setul de date. Pentru fiecare caracteristică numerică au fost calculate media, mediana și deviația standard, împreună cu valorile minim–maxim și quartilele (Q1, Q2, Q3). Au fost generate histograme pentru a observa distribuția datelor, iar outlierii au fost identificați utilizând metoda IQR și percentila 1%–99%. Aceste statistici oferă o imagine generală asupra comportamentului datelor înainte de antrenarea rețelei neuronale
+
 
 ### 3.2 Analiza calității datelor
 
-* **Detectarea valorilor lipsă** (% pe coloană)
-* **Detectarea valorilor inconsistente sau eronate**
-* **Identificarea caracteristicilor redundante sau puternic corelate**
+Calitatea datelor a fost verificată prin identificarea valorilor lipsă, a tipurilor de date și a consistenței intervalelor pentru fiecare variabilă numerică. Setul de date nu conține valori lipsă, iar toate variabilele respectă tipurile așteptate. Domeniile valorilor se încadrează în limite realiste pentru parametrii unui vehicul. De asemenea, s-a verificat existența unor valori extreme care ar putea afecta procesul de antrenare.
 
 ### 3.3 Probleme identificate
 
-* [exemplu] Feature X are 8% valori lipsă
-* [exemplu] Distribuția feature Y este puternic neuniformă
-* [exemplu] Variabilitate ridicată în clase (class imbalance)
+Analiza a evidențiat prezența unor valori extreme (outlieri), în special la variabile precum kilometrajul, temperaturile și valorile MAF/MAP, care pot influența distribuția datelor. Deși nu există valori lipsă, anumite variabile prezintă dispersie ridicată, ceea ce poate necesita normalizare înainte de antrenare. O parte dintre valorile extreme pot proveni din comportamente reale ale vehiculului, însă unele pot reprezenta măsurători atipice ale senzorilor.
 
 ---
 
@@ -97,24 +94,23 @@ Proiect_RN/
 
 ### 4.1 Curățarea datelor
 
-* **Eliminare duplicatelor**
-* **Tratarea valorilor lipsă:**
-  * Feature A: imputare cu mediană
-  * Feature B: eliminare (30% valori lipsă)
-* **Tratarea outlierilor:** IQR / limitare percentile
+Datasetul nu conține înregistrări duplicate.
+Nu au fost identificate valori lipsă; nu a fost necesară imputarea.
+Outlierii au fost identificați prin metoda IQR și analiza percentilelor (1% și 99%).
+Deoarece valorile extreme pot reflecta situații tehnice reale, nu au fost eliminate automat, însă normalizarea ulterioară reduce impactul lor în procesul de antrenare.
 
 ### 4.2 Transformarea caracteristicilor
 
-* **Normalizare:** Min–Max / Standardizare
-* **Encoding pentru variabile categoriale**
-* **Ajustarea dezechilibrului de clasă** (dacă este cazul)
+Toate variabilele numerice au fost scalate folosind media și deviația standard ale datasetului.
+Encocoding-ul nu a fost necesar, deoarece datasetul conține doar variabile numerice.
+
 
 ### 4.3 Structurarea seturilor de date
 
 **Împărțire recomandată:**
-* 70–80% – train
-* 10–15% – validation
-* 10–15% – test
+* 70% – train
+* 15% – validation
+* 15% – test
 
 **Principii respectate:**
 * Stratificare pentru clasificare
@@ -123,28 +119,59 @@ Proiect_RN/
 
 ### 4.4 Salvarea rezultatelor preprocesării
 
-* Date preprocesate în `data/processed/`
+* Date preprocesate în `data\processed\dataset_clean.csv`
 * Seturi train/val/test în foldere dedicate
-* Parametrii de preprocesare în `config/preprocessing_config.*` (opțional)
 
 ---
 
 ##  5. Fișiere Generate în Această Etapă
+ 
+* În urma proceselorde, au fost generate și organizate următoarele fișiere în structura proiectului:
 
-* `data/raw/` – date brute
-* `data/processed/` – date curățate & transformate
-* `data/train/`, `data/validation/`, `data/test/` – seturi finale
-* `src/preprocessing/` – codul de preprocesare
-* `data/README.md` – descrierea dataset-ului
+ `data/raw/`
+
+* Conține datasetul inițial, neprelucrat:
+
+`dataset_auto.csv`
+
+`data/processed/`
+
+* Include versiunea curățată și standardizată a întregului dataset:
+
+`dataset_clean.csv`
+
+`data/train/, data/validation/, data/test/`
+
+* Conțin seturile finale utilizate în antrenare, validare și testare:
+
+`X_train.csv, y_train.csv`
+
+`X_val.csv`, `y_val.csv`
+
+`X_test.csv`, `y_test.csv`
+
+`config/`
+
+* Parametrii scalării folosiți ulterior în model:
+
+`scaler.pkl`
+
+`src/preprocessing/`
+
+* Scriptul responsabil cu preprocesarea datelor:
+
+`procesare_dataset.py`
+
+* Documentație asociată setului de date utilizat în proiect.
 
 ---
 
 ##  6. Stare Etapă (de completat de student)
 
-- [ ] Structură repository configurată
-- [ ] Dataset analizat (EDA realizată)
-- [ ] Date preprocesate
-- [ ] Seturi train/val/test generate
-- [ ] Documentație actualizată în README + `data/README.md`
+- [x] Structură repository configurată
+- [x] Dataset analizat (EDA realizată)
+- [x] Date preprocesate
+- [x] Seturi train/val/test generate
+- [x] Documentație actualizată în README + `data/README.md`
 
 ---
