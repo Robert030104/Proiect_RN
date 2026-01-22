@@ -1,58 +1,68 @@
+from pathlib import Path
+import pickle
+import numpy as np
 import pandas as pd
-from sklearn.model_selection import train_test_split
-from sklearn.preprocessing import StandardScaler
-import joblib
-import os
 
-RAW_DATA_PATH = "data/raw/dataset_auto.csv"
-TRAIN_PATH = "data/train/"
-VAL_PATH = "data/validation/"
-TEST_PATH = "data/test/"
-SCALER_PATH = "config/scaler.pkl"
 
-os.makedirs(TRAIN_PATH, exist_ok=True)
-os.makedirs(VAL_PATH, exist_ok=True)
-os.makedirs(TEST_PATH, exist_ok=True)
-os.makedirs("config", exist_ok=True)
+def get_root():
+    return Path(__file__).resolve().parents[2]
 
-data = pd.read_csv(RAW_DATA_PATH)
 
-COLS = [
-    "km",
-    "vechime_ani",
-    "temperatura_motor",
-    "temperatura_ulei",
-    "presiune_ulei",
-    "vibratii",
-    "ore_de_la_revizie",
-    "km_de_la_schimb_ulei",
-    "maf",
-    "map_val",
-]
+def preprocess():
+    root = get_root()
 
-X = data[COLS]
-y = data["defect"]
+    raw_path = root / "data" / "raw" / "dataset_auto.csv"
+    if not raw_path.exists():
+        raise FileNotFoundError(f"Nu exista: {raw_path}")
 
-X_train, X_temp, y_train, y_temp = train_test_split(
-    X, y, test_size=0.30, random_state=42, stratify=y
-)
+    df = pd.read_csv(raw_path)
+    if "defect" not in df.columns:
+        raise ValueError("Lipseste coloana 'defect'")
 
-X_val, X_test, y_val, y_test = train_test_split(
-    X_temp, y_temp, test_size=0.50, random_state=42, stratify=y_temp
-)
+    y = pd.to_numeric(df["defect"], errors="coerce").fillna(0).astype(int)
+    X = df.drop(columns=["defect"]).copy()
 
-scaler = StandardScaler()
-scaler.fit(X_train.values)
-joblib.dump(scaler, SCALER_PATH)
+    # fortam numeric
+    for c in X.columns:
+        X[c] = pd.to_numeric(X[c], errors="coerce")
 
-# salvam BRUT + header
-X_train.to_csv(TRAIN_PATH + "X_train.csv", index=False)
-pd.Series(y_train).to_csv(TRAIN_PATH + "y_train.csv", index=False)
+    # imputare
+    if X.isna().any().any():
+        X = X.fillna(X.median(numeric_only=True))
 
-X_val.to_csv(VAL_PATH + "X_val.csv", index=False)
-pd.Series(y_val).to_csv(VAL_PATH + "y_val.csv", index=False)
+    feature_names = list(X.columns)
 
-X_test.to_csv(TEST_PATH + "X_test.csv", index=False)
-pd.Series(y_test).to_csv(TEST_PATH + "y_test.csv", index=False)
+    Xv = X.values.astype(np.float32)
+    mean = Xv.mean(axis=0).astype(np.float32)
+    std = Xv.std(axis=0).astype(np.float32)
+    std = np.where(std < 1e-8, 1.0, std).astype(np.float32)
 
-print("Preprocesarea datelor a fost finalizata cu succes (X brut + scaler.pkl).")
+    # IMPORTANT: salvam PROCESSED ca RAW (nescalat)
+    out_df = X.copy()
+    out_df["defect"] = y.values.astype(int)
+
+    proc_dir = root / "data" / "processed"
+    proc_dir.mkdir(parents=True, exist_ok=True)
+    out_csv = proc_dir / "dataset_processed.csv"
+    out_df.to_csv(out_csv, index=False)
+
+    scaler_path = root / "scaler.pkl"
+    with open(scaler_path, "wb") as f:
+        pickle.dump(
+            {
+                "feature_names": feature_names,
+                "mean": mean,
+                "scale": std,
+            },
+            f,
+        )
+
+    print(f"OK: {raw_path}")
+    print(f"Saved: {out_csv}")
+    print(f"Saved: {scaler_path}")
+    print(f"Rows: {len(df)}  Defect_rate: {y.mean()*100:.2f}%")
+    print(f"Features: {len(feature_names)}")
+
+
+if __name__ == "__main__":
+    preprocess()

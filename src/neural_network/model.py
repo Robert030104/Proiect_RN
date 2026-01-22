@@ -1,22 +1,28 @@
 import torch
 import torch.nn as nn
 
-class DefectPredictor(nn.Module):
-    """
-    Retea neuronala MLP pentru predictia defectiunilor auto.
-    Model definit pentru etapa de arhitectura (neantrenat).
-    """
 
-    def __init__(self, input_dim):
+class MLP(nn.Module):
+    def __init__(self, input_dim: int):
         super().__init__()
-
         self.net = nn.Sequential(
-            nn.Linear(input_dim, 64),
-            nn.ReLU(),
-            nn.Linear(64, 32),
-            nn.ReLU(),
-            nn.Linear(32, 2)  # clasificare binara: normal / defect
+            nn.Linear(input_dim, 256),
+            nn.BatchNorm1d(256),
+            nn.SiLU(),
+            nn.Dropout(0.25),
+
+            nn.Linear(256, 128),
+            nn.BatchNorm1d(128),
+            nn.SiLU(),
+            nn.Dropout(0.20),
+
+            nn.Linear(128, 64),
+            nn.BatchNorm1d(64),
+            nn.SiLU(),
+            nn.Dropout(0.15),
+
+            nn.Linear(64, 1),
         )
 
-    def forward(self, x):
-        return self.net(x)
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        return self.net(x).squeeze(1)

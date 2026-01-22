@@ -1,106 +1,260 @@
-import os
-import random
+from pathlib import Path
+import pickle
 import numpy as np
+import pandas as pd
 import torch
 import torch.nn as nn
-import torch.optim as optim
-import pandas as pd
-import joblib
 from torch.utils.data import DataLoader, TensorDataset
-from sklearn.metrics import recall_score
-from pathlib import Path
-import sys
+from sklearn.metrics import roc_auc_score
 
-SEED = 42
-random.seed(SEED)
-np.random.seed(SEED)
-torch.manual_seed(SEED)
+from model import MLP
 
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-# radacina proiectului
-HERE = Path(__file__).resolve()
-# daca train_model.py e in src/neural_network, root e cu 2 nivele sus
-ROOT = HERE.parents[2] if (HERE.parents[2] / "config").exists() else HERE.parent
+def get_root() -> Path:
+    return Path(__file__).resolve().parents[2]
 
-# permite importul modelului
-sys.path.insert(0, str(HERE.parent))
-from model import DefectPredictor  # model.py in acelasi folder cu train_model.py
 
-X_TRAIN_PATH = ROOT / "data/train/X_train.csv"
-Y_TRAIN_PATH = ROOT / "data/train/y_train.csv"
-X_VAL_PATH = ROOT / "data/validation/X_val.csv"
-Y_VAL_PATH = ROOT / "data/validation/y_val.csv"
-MODEL_PATH = ROOT / "models/model_predictie_defecte.pth"
-SCALER_PATH = ROOT / "config/scaler.pkl"
+def load_scaler(root: Path):
+    scaler_path = root / "scaler.pkl"
+    if not scaler_path.exists():
+        raise FileNotFoundError(f"Lipseste: {scaler_path}")
+    with open(scaler_path, "rb") as f:
+        sc = pickle.load(f)
+    feature_names = list(sc["feature_names"])
+    mean = np.array(sc["mean"], dtype=np.float32)
+    scale = np.array(sc["scale"], dtype=np.float32)
+    return scaler_path, feature_names, mean, scale
 
-EPOCHS = 50
-LR = 0.001
-BATCH_SIZE = 32
 
-scaler = joblib.load(SCALER_PATH)
+def _find_xy_splits(root: Path):
+    trX = root / "data" / "train" / "X_train.csv"
+    trY = root / "data" / "train" / "y_train.csv"
 
-def load_xy(x_path, y_path):
-    X_np = pd.read_csv(x_path).values
-    X_np = scaler.transform(X_np)  # <-- scalare aici (o singura data)
-    X = torch.tensor(X_np, dtype=torch.float32)
+    vaX = root / "data" / "validation" / "X_val.csv"
+    vaY = root / "data" / "validation" / "y_val.csv"
 
-    y = pd.read_csv(y_path).values.squeeze()
-    y = torch.tensor(y, dtype=torch.long)
+    teX = root / "data" / "test" / "X_test.csv"
+    teY = root / "data" / "test" / "y_test.csv"
+
+    missing = []
+    for p in [trX, trY, vaX, vaY, teX, teY]:
+        if not p.exists():
+            missing.append(str(p))
+    if missing:
+        raise FileNotFoundError("Lipsesc fisierele split (X_/y_):\n- " + "\n- ".join(missing))
+
+    return (trX, trY), (vaX, vaY), (teX, teY)
+
+
+def _load_xy(x_path: Path, y_path: Path, feature_names, mean, scale):
+    Xdf = pd.read_csv(x_path)
+    ydf = pd.read_csv(y_path)
+
+    if "defect" in ydf.columns:
+        y = pd.to_numeric(ydf["defect"], errors="coerce").fillna(0).astype(int).values.astype(np.float32)
+    else:
+        y = pd.to_numeric(ydf.iloc[:, 0], errors="coerce").fillna(0).astype(int).values.astype(np.float32)
+
+    missing = [c for c in feature_names if c not in Xdf.columns]
+    if missing:
+        raise ValueError(f"Lipsesc coloane in {x_path}: {missing}")
+
+    X = Xdf[feature_names].copy()
+    for c in feature_names:
+        X[c] = pd.to_numeric(X[c], errors="coerce")
+
+    if X.isna().any().any():
+        X = X.fillna(X.median(numeric_only=True))
+
+    X = X.values.astype(np.float32)
+    X = (X - mean) / (scale + 1e-12)
     return X, y
 
-X_train, y_train = load_xy(X_TRAIN_PATH, Y_TRAIN_PATH)
-X_val, y_val = load_xy(X_VAL_PATH, Y_VAL_PATH)
 
-train_loader = DataLoader(
-    TensorDataset(X_train, y_train),
-    batch_size=BATCH_SIZE,
-    shuffle=True
-)
-
-input_dim = X_train.shape[1]
-model = DefectPredictor(input_dim).to(device)
-
-# DEFECT mai important (ca sa nu prezica doar NORMAL)
-class_weights = torch.tensor([1.0, 10.0], device=device)
-criterion = nn.CrossEntropyLoss(weight=class_weights)
-
-optimizer = optim.Adam(model.parameters(), lr=LR)
-
-best_recall = 0.0
-os.makedirs(ROOT / "models", exist_ok=True)
-
-for epoch in range(EPOCHS):
-    model.train()
-    train_loss = 0.0
-
-    for xb, yb in train_loader:
-        xb, yb = xb.to(device), yb.to(device)
-
-        optimizer.zero_grad()
-        outputs = model(xb)
-        loss = criterion(outputs, yb)
-        loss.backward()
-        optimizer.step()
-
-        train_loss += loss.item()
-
+def eval_auc_loss(model, loader, criterion, device):
     model.eval()
+    losses = []
+    probs_all = []
+    y_all = []
     with torch.no_grad():
-        outputs = model(X_val.to(device))
-        preds = torch.argmax(outputs, dim=1).cpu().numpy()
-        val_recall = recall_score(y_val.numpy(), preds, zero_division=0)
+        for xb, yb in loader:
+            xb = xb.to(device)
+            yb = yb.to(device)
+            logits = model(xb)
+            loss = criterion(logits, yb)
+            losses.append(float(loss.item()))
+            prob = torch.sigmoid(logits).detach().cpu().numpy()
+            probs_all.append(prob)
+            y_all.append(yb.detach().cpu().numpy())
 
-    train_loss /= len(train_loader)
+    p = np.concatenate(probs_all, axis=0).reshape(-1)
+    y = np.concatenate(y_all, axis=0).reshape(-1)
+    auc = roc_auc_score(y, p) if len(np.unique(y)) > 1 else 0.5
+    val_loss = float(np.mean(losses)) if losses else 0.0
+    return auc, val_loss
 
-    print(
-        f"Epoch [{epoch+1}/{EPOCHS}] "
-        f"Train Loss: {train_loss:.4f} | "
-        f"Recall DEFECT (val): {val_recall*100:.2f}%"
+
+def get_probs(model, loader, device):
+    model.eval()
+    probs_all = []
+    y_all = []
+    with torch.no_grad():
+        for xb, yb in loader:
+            xb = xb.to(device)
+            yb = yb.to(device)
+            logits = model(xb)
+            prob = torch.sigmoid(logits).detach().cpu().numpy()
+            probs_all.append(prob)
+            y_all.append(yb.detach().cpu().numpy())
+    p = np.concatenate(probs_all, axis=0).reshape(-1)
+    y = np.concatenate(y_all, axis=0).reshape(-1)
+    return y, p
+
+
+def pick_threshold_max_fpr(y, p, max_fpr=0.115):
+    order = np.argsort(p)[::-1]
+    p_sorted = p[order]
+    y_sorted = y[order]
+
+    n_ok = max(int((y_sorted == 0).sum()), 1)
+    fp = 0
+    best_thr = 1.0
+    found = False
+
+    for prob, yy in zip(p_sorted, y_sorted):
+        if yy == 0:
+            fp += 1
+        fpr = fp / n_ok
+        if fpr <= max_fpr:
+            best_thr = prob
+            found = True
+
+    return float(best_thr), bool(found)
+
+
+def train(
+    pos_mult=1.30,          # V5: trend-uri ajuta, nu mai impingem prea tare
+    batch_size=256,
+    lr=7e-4,
+    weight_decay=1e-4,
+    max_epochs=160,         # un pic mai mult, dar se opreste pe early stop
+    patience=22,
+    max_fpr=0.13,          # tinta ~12 alarme false / 100 OK
+):
+    root = get_root()
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    print(f"device={device}")
+
+    scaler_path, feature_names, mean, scale = load_scaler(root)
+    (trX, trY), (vaX, vaY), (teX, teY) = _find_xy_splits(root)
+
+    Xtr, ytr = _load_xy(trX, trY, feature_names, mean, scale)
+    Xva, yva = _load_xy(vaX, vaY, feature_names, mean, scale)
+
+    defect_rate_train = float(ytr.mean()) if len(ytr) else 0.0
+    print(f"train_rows={len(ytr)} val_rows={len(yva)} defect_rate_train={defect_rate_train:.3f}")
+
+    pos = max(float(ytr.sum()), 1.0)
+    neg = max(float(len(ytr) - ytr.sum()), 1.0)
+    pos_weight_base = neg / pos
+    pos_weight_used = pos_weight_base * float(pos_mult)
+    print(f"pos_weight_base={pos_weight_base:.3f} pos_mult={pos_mult:.2f} pos_weight_used={pos_weight_used:.3f}")
+
+    model = MLP(len(feature_names)).to(device)
+    criterion = nn.BCEWithLogitsLoss(pos_weight=torch.tensor([pos_weight_used], device=device))
+    optimizer = torch.optim.AdamW(model.parameters(), lr=lr, weight_decay=weight_decay)
+
+    scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
+        optimizer, mode="max", factor=0.5, patience=4, min_lr=1e-5
     )
 
-    if val_recall > best_recall:
-        best_recall = val_recall
-        torch.save(model.state_dict(), MODEL_PATH)
+    tr_loader = DataLoader(
+        TensorDataset(torch.tensor(Xtr), torch.tensor(ytr)),
+        batch_size=batch_size, shuffle=True, drop_last=False
+    )
+    va_loader = DataLoader(
+        TensorDataset(torch.tensor(Xva), torch.tensor(yva)),
+        batch_size=batch_size, shuffle=False, drop_last=False
+    )
 
-print(f"\nCel mai bun model salvat (Recall DEFECT = {best_recall*100:.2f}%)")
+    best_auc = -1.0
+    best_state = None
+    best_epoch = 0
+    bad = 0
+    min_delta = 1e-4
+
+    for ep in range(1, max_epochs + 1):
+        model.train()
+        train_losses = []
+        for xb, yb in tr_loader:
+            xb = xb.to(device)
+            yb = yb.to(device)
+
+            optimizer.zero_grad(set_to_none=True)
+            logits = model(xb)
+            loss = criterion(logits, yb)
+            loss.backward()
+            optimizer.step()
+            train_losses.append(float(loss.item()))
+
+        tr_loss = float(np.mean(train_losses)) if train_losses else 0.0
+        val_auc, val_loss = eval_auc_loss(model, va_loader, criterion, device)
+        lr_now = optimizer.param_groups[0]["lr"]
+
+        print(f"ep={ep:03d} loss={tr_loss:.4f} val_loss={val_loss:.4f} val_auc={val_auc:.4f} lr={lr_now:.6f}")
+        scheduler.step(val_auc)
+
+        if val_auc > best_auc + min_delta:
+            best_auc = val_auc
+            best_epoch = ep
+            best_state = {k: v.detach().cpu().clone() for k, v in model.state_dict().items()}
+            bad = 0
+        else:
+            bad += 1
+            if bad >= patience:
+                break
+
+    if best_state is None:
+        best_state = {k: v.detach().cpu().clone() for k, v in model.state_dict().items()}
+        best_epoch = ep
+        best_auc = 0.0
+
+    model.load_state_dict(best_state)
+    y_val, p_val = get_probs(model, va_loader, device)
+    thr_auto, found = pick_threshold_max_fpr(y_val.astype(int), p_val.astype(float), max_fpr=float(max_fpr))
+    if not found:
+        thr_auto = 0.60
+
+    out_dir = root / "models"
+    out_dir.mkdir(parents=True, exist_ok=True)
+    model_path = out_dir / "model_predictie_defecte.pth"
+
+    torch.save(
+        {
+            "state_dict": best_state,
+            "input_dim": len(feature_names),
+            "best_auc": float(best_auc),
+            "best_epoch": int(best_epoch),
+            "feature_names": feature_names,
+            "scaler_path": str(scaler_path),
+            "threshold_auto": float(thr_auto),
+            "threshold_rule": "max_fpr",
+            "max_fpr": float(max_fpr),
+            "loss_name": "bce",
+            "pos_mult": float(pos_mult),
+            "pos_weight_used": float(pos_weight_used),
+        },
+        model_path,
+    )
+
+    print(f"Saved: {model_path}")
+    print(f"Best AUC: {best_auc:.4f}  Best epoch: {best_epoch}")
+    print(f"Auto threshold (val, max_fpr={max_fpr:.3f}): {thr_auto:.3f}  found={found}")
+    print("Splits used:")
+    print(f"  train: {trX} | {trY}")
+    print(f"  val:   {vaX} | {vaY}")
+    print(f"  test:  {teX} | {teY}")
+
+
+if __name__ == "__main__":
+    train()
