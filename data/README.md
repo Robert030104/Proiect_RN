@@ -4,7 +4,7 @@
 **Instituție:** POLITEHNICA București – FIIR  
 **Student:** Pintea Robert Stefan  
 **Link Repository GitHub:** https://github.com/Robert030104/Proiect_RN  
-**Data:** 12/12/2025  
+**Data:** 12/02/2026  
 
 Acest dataset este utilizat în cadrul proiectului de Rețele Neuronale (RN) – POLITEHNICA București, FIIR.
 

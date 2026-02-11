@@ -353,6 +353,8 @@ D:.
 |   |   state_machine.png
 |   |
 |   +---demo
+|   |       demo.mp4
+|   |
 |   +---optimization
 |   |       accuracy_comparison.png
 |   |       auc_comparison.png
@@ -386,15 +388,18 @@ D:.
 \---src
     +---app
     |       app.py
+    |       README.md
     |
     +---data_acquisition
     |       dataset.py
+    |       README.md
     |
     +---neural_network
     |   |   evaluare_confusions.py
     |   |   evaluare_model.py
     |   |   model.py
     |   |   optimize_threshold.py
+    |   |   README.md
     |   |   train_model.py
     |   |   visualize.py
     |   |
