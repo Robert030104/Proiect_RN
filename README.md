@@ -312,7 +312,7 @@ Se vede interfata Streamlit, detalii model (prag, AUC, epoch), input-uri senzori
 ## 8. Structura Repository-ului Final
 
 D:.
-|   Pintea_Robert_Grupa_631_AB_README_Proiect_RN.md
+|   README.md
 |   requirements.txt
 |   START_VISINSPAI_win.bat
 |
