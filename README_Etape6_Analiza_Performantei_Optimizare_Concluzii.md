@@ -3,7 +3,7 @@
 **Disciplina:** Retele Neuronale  
 **Institutie:** POLITEHNICA Bucuresti – FIIR  
 **Student:** Pintea Robert-Stefan 
-**Link Repository GitHub:** [URL complet]  
+**Link Repository GitHub:** https://github.com/Robert030104 
 **Data predarii:** 22.01.2026
 
 ---
@@ -241,7 +241,7 @@ Test complet rulat local:
 
 ---
 
-## 5.5 Plan post-feedback (ultima iteratie pre-examen)
+## 5.5 Plan post-feedback 
 
 Dupa feedback:
 1. Daca se cere recall mai mare: cresc `max_fpr` la 0.14–0.16 sau introduc “WARN/WATCHLIST”.  
@@ -254,7 +254,7 @@ Dupa feedback:
 
 ---
 
-## Structura repository la finalul Etapei 6 (adaptata proiectului meu)
+## Structura repository la finalul Etapei 6 
 
 Proiect_RN/
 ├── README.md
@@ -281,7 +281,7 @@ Proiect_RN/
 
 ---
 
-## Instructiuni de rulare (Etapa 6)
+## Instructiuni de rulare 
 
 ```bash
 # 1) Genereaza date

@@ -1,300 +1,186 @@
 from pathlib import Path
+import random
 import numpy as np
 import pandas as pd
 
 
-def sigmoid(x):
+def get_root() -> Path:
+    return Path(__file__).resolve().parents[2]
+
+
+def clip(x, lo, hi):
+    return float(max(lo, min(hi, x)))
+
+
+def gen_normal(rng):
+    km = rng.uniform(5_000, 220_000)
+    vechime_ani = rng.uniform(0.2, 14.0)
+    zile_de_la_ultima_revizie = rng.uniform(0, 240)
+
+    coolant_temp = rng.normal(88.0, 6.0)
+    oil_temp = rng.normal(95.0, 8.0)
+    oil_pressure = rng.normal(2.4, 0.35)
+
+    maf = rng.normal(7.0, 1.6)
+    map_kpa = rng.normal(55.0, 10.0)
+    battery_v = rng.normal(12.5, 0.35)
+
+    vibratii_relanti = rng.normal(1.2, 0.45)
+
+    coolant_temp = clip(coolant_temp, 70, 102)
+    oil_temp = clip(oil_temp, 75, 112)
+    oil_pressure = clip(oil_pressure, 1.7, 3.4)
+
+    maf = clip(maf, 2.5, 14.0)
+    map_kpa = clip(map_kpa, 25.0, 90.0)
+    battery_v = clip(battery_v, 11.8, 13.5)
+
+    vibratii_relanti = clip(vibratii_relanti, 0.3, 2.4)
+
+    return {
+        "km": float(km),
+        "vechime_ani": float(vechime_ani),
+        "zile_de_la_ultima_revizie": float(zile_de_la_ultima_revizie),
+        "coolant_temp": float(coolant_temp),
+        "oil_temp": float(oil_temp),
+        "oil_pressure": float(oil_pressure),
+        "maf": float(maf),
+        "map_kpa": float(map_kpa),
+        "battery_v": float(battery_v),
+        "vibratii_relanti": float(vibratii_relanti),
+    }
+
+
+def inject_defect_signature(row, rng):
+    defect_type = rng.choice(["supraincalzire", "presiune_ulei", "vibratii", "baterie_slaba", "mixt"])
+
+    if defect_type == "supraincalzire":
+        row["coolant_temp"] = clip(row["coolant_temp"] + rng.uniform(10, 22), 85, 125)
+        row["oil_temp"] = clip(row["oil_temp"] + rng.uniform(12, 24), 90, 135)
+        row["oil_pressure"] = clip(row["oil_pressure"] - rng.uniform(0.1, 0.35), 0.7, 3.4)
+
+    elif defect_type == "presiune_ulei":
+        row["oil_pressure"] = clip(row["oil_pressure"] - rng.uniform(0.6, 1.2), 0.6, 3.4)
+        row["oil_temp"] = clip(row["oil_temp"] + rng.uniform(4, 12), 75, 135)
+
+    elif defect_type == "vibratii":
+        row["vibratii_relanti"] = clip(row["vibratii_relanti"] + rng.uniform(2.2, 5.5), 0.3, 10.0)
+        row["maf"] = clip(row["maf"] + rng.uniform(-1.5, 2.5), 2.5, 16.0)
+
+    elif defect_type == "baterie_slaba":
+        row["battery_v"] = clip(row["battery_v"] - rng.uniform(0.8, 1.4), 9.8, 13.5)
+        row["map_kpa"] = clip(row["map_kpa"] + rng.uniform(-6, 10), 20.0, 95.0)
+
+    else:
+        row["oil_pressure"] = clip(row["oil_pressure"] - rng.uniform(0.5, 1.0), 0.6, 3.4)
+        row["coolant_temp"] = clip(row["coolant_temp"] + rng.uniform(8, 18), 80, 125)
+        row["vibratii_relanti"] = clip(row["vibratii_relanti"] + rng.uniform(1.5, 4.0), 0.3, 10.0)
+
+    row["km"] = clip(row["km"] + rng.uniform(20_000, 90_000), 0, 350_000)
+    row["zile_de_la_ultima_revizie"] = clip(row["zile_de_la_ultima_revizie"] + rng.uniform(60, 240), 0, 400)
+    row["vechime_ani"] = clip(row["vechime_ani"] + rng.uniform(0.3, 2.5), 0.1, 20.0)
+
+    return defect_type
+
+
+def score_risk(row):
+    r = 0.0
+    r += max(0.0, (row["coolant_temp"] - 95.0) / 20.0)
+    r += max(0.0, (row["oil_temp"] - 110.0) / 25.0)
+    r += max(0.0, (1.6 - row["oil_pressure"]) / 0.8)
+    r += max(0.0, (row["vibratii_relanti"] - 2.2) / 3.5)
+    r += max(0.0, (11.9 - row["battery_v"]) / 1.0)
+    r += max(0.0, (row["km"] - 180_000) / 130_000)
+    r += max(0.0, (row["zile_de_la_ultima_revizie"] - 180) / 160)
+    return r
+
+
+def logistic(x):
     return 1.0 / (1.0 + np.exp(-x))
 
 
-def calibrate_intercept(raw_score, target, iters=90):
-    lo, hi = -30.0, 30.0
-    for _ in range(iters):
-        mid = (lo + hi) / 2.0
-        m = float(sigmoid(raw_score + mid).mean())
-        if m < target:
-            lo = mid
-        else:
-            hi = mid
-    return (lo + hi) / 2.0
+def enforce_separation(row, label, rng):
+    if label == 1:
+        bad = 0
+        if row["oil_pressure"] <= 1.35:
+            bad += 1
+        if row["coolant_temp"] >= 100.0:
+            bad += 1
+        if row["oil_temp"] >= 115.0:
+            bad += 1
+        if row["vibratii_relanti"] >= 3.2:
+            bad += 1
+        if row["battery_v"] <= 11.6:
+            bad += 1
+
+        if bad < 2:
+            picks = rng.choice(["oil_pressure", "coolant_temp", "oil_temp", "vibratii_relanti"], size=2, replace=False)
+            for f in picks:
+                if f == "oil_pressure":
+                    row["oil_pressure"] = clip(row["oil_pressure"] - rng.uniform(0.6, 1.0), 0.6, 3.4)
+                elif f == "coolant_temp":
+                    row["coolant_temp"] = clip(row["coolant_temp"] + rng.uniform(10, 18), 80, 125)
+                elif f == "oil_temp":
+                    row["oil_temp"] = clip(row["oil_temp"] + rng.uniform(10, 18), 80, 135)
+                elif f == "vibratii_relanti":
+                    row["vibratii_relanti"] = clip(row["vibratii_relanti"] + rng.uniform(2.0, 4.5), 0.3, 10.0)
+
+    else:
+        row["coolant_temp"] = clip(row["coolant_temp"], 70, 97.0)
+        row["oil_temp"] = clip(row["oil_temp"], 75, 112.0)
+        row["vibratii_relanti"] = clip(row["vibratii_relanti"], 0.3, 2.6)
+        row["oil_pressure"] = clip(row["oil_pressure"], 1.7, 3.4)
+        row["battery_v"] = clip(row["battery_v"], 11.8, 13.5)
+
+    return row
 
 
-def generate_dataset(n=12000, defect_target=0.25, seed=42, label_noise=0.0):
+def generate(n_rows=12000, defect_target=0.25, seed=42, label_noise=0.02):
     rng = np.random.default_rng(seed)
+    rows = []
 
-    vechime_ani = rng.integers(1, 21, size=n).astype(np.float32)
-    km_mean = 12000.0 * vechime_ani + rng.normal(0, 26000, size=n)
-    kilometraj_total = np.clip(km_mean, 5000, 420000).astype(np.float32)
+    base_offset = 1.38
+    for _ in range(n_rows):
+        row = gen_normal(rng)
 
-    zile_de_la_ultima_revizie = rng.integers(0, 420, size=n).astype(np.float32)
-    service_overdue = (zile_de_la_ultima_revizie >= 180).astype(int).astype(np.float32)
+        risk = score_risk(row)
+        p = logistic(risk - base_offset)
 
-    map_kpa = np.clip(rng.normal(42, 14, size=n), 25, 95).astype(np.float32)
+        p = 0.75 * p + 0.25 * defect_target
+        p = float(clip(p, 0.01, 0.99))
 
-    # Baseline (t0)
-    coolant_t0 = (
-        86.0
-        + 0.20 * (map_kpa - 35.0)
-        + 0.12 * (vechime_ani - 6.0)
-        + rng.normal(0, 2.8, size=n)
-    ).astype(np.float32)
+        label = 1 if rng.random() < p else 0
 
-    oil_t0 = (
-        coolant_t0
-        + 4.5
-        + 0.12 * (map_kpa - 35.0)
-        + rng.normal(0, 2.2, size=n)
-    ).astype(np.float32)
+        defect_type = "none"
+        if label == 1:
+            defect_type = inject_defect_signature(row, rng)
 
-    battery_t0 = (
-        14.10
-        - 0.055 * (vechime_ani - 6.0)
-        + rng.normal(0, 0.20, size=n)
-    ).astype(np.float32)
+        row = enforce_separation(row, label, rng)
 
-    vibr_t0 = (
-        1.30
-        + 0.070 * (vechime_ani - 4.0)
-        + 0.0000032 * kilometraj_total
-        + rng.normal(0, 0.30, size=n)
-    ).astype(np.float32)
+        if rng.random() < label_noise:
+            label = 1 - label
+            if label == 0:
+                defect_type = "none"
 
-    maf_expected0 = 2.6 + 0.20 * map_kpa
-    maf_t0 = (maf_expected0 + rng.normal(0, 1.4, size=n)).astype(np.float32)
+        row["defect"] = int(label)
+        row["defect_type"] = defect_type
+        rows.append(row)
 
-    oilp_t0 = (
-        3.10
-        - 0.022 * (oil_t0 - 95.0)
-        + 0.004 * (map_kpa - 35.0)
-        - 0.030 * (vechime_ani - 6.0)
-        - 0.0000022 * (kilometraj_total - 120000.0)
-        + rng.normal(0, 0.18, size=n)
-    ).astype(np.float32)
-
-    coolant_t0 = np.clip(coolant_t0, 70, 125)
-    oil_t0 = np.clip(oil_t0, 75, 140)
-    oilp_t0 = np.clip(oilp_t0, 0.60, 4.2)
-    maf_t0 = np.clip(maf_t0, 1.5, 25.0)
-    battery_t0 = np.clip(battery_t0, 10.5, 14.8)
-    vibr_t0 = np.clip(vibr_t0, 0.8, 6.0)
-
-    # Fault propensities (latent) - depend on age/km/service
-    km_norm = (kilometraj_total - 180000.0) / 120000.0
-    age_norm = (vechime_ani - 8.0) / 6.0
-
-    p_cooling = sigmoid(-4.0 + 1.0 * age_norm + 0.9 * km_norm + 0.9 * service_overdue)
-    p_lube = sigmoid(-3.9 + 1.1 * age_norm + 1.0 * km_norm + 0.8 * service_overdue)
-    p_air = sigmoid(-4.3 + 0.9 * age_norm + 0.8 * km_norm + 0.25 * (map_kpa > 55).astype(np.float32))
-    p_elec = sigmoid(-4.6 + 1.2 * age_norm + 0.9 * km_norm)
-
-    cooling_fault = (rng.random(n) < p_cooling).astype(np.float32)
-    lube_fault = (rng.random(n) < p_lube).astype(np.float32)
-    air_fault = (rng.random(n) < p_air).astype(np.float32)
-    elec_fault = (rng.random(n) < p_elec).astype(np.float32)
-
-    # Time gap
-    delta_days = rng.integers(30, 121, size=n).astype(np.float32)
-    delta_km = np.clip(rng.normal(2200, 900, size=n), 500, 6000).astype(np.float32)
-
-    # Trends - IMPORTANT: make them truly predictive
-    # Cooling -> temp rises
-    trend_temp_raw = (
-        rng.normal(0.2, 0.6, size=n)
-        + cooling_fault * rng.uniform(2.0, 6.0, size=n)
-        + lube_fault * rng.uniform(0.6, 2.0, size=n)
-        + 0.25 * service_overdue
-    ).astype(np.float32)
-
-    # Lube -> pressure drops
-    trend_pressure_raw = (
-        rng.normal(0.02, 0.05, size=n)
-        + lube_fault * rng.uniform(0.18, 0.45, size=n)
-        + 0.03 * service_overdue
-    ).astype(np.float32)
-
-    # Vibration rises
-    trend_vibr_raw = (
-        rng.normal(0.02, 0.05, size=n)
-        + lube_fault * rng.uniform(0.10, 0.28, size=n)
-        + elec_fault * rng.uniform(0.03, 0.12, size=n)
-        + 0.03 * (delta_km / 3000.0)
-    ).astype(np.float32)
-
-    # Battery drops
-    trend_batt_raw = (
-        rng.normal(0.00, 0.06, size=n)
-        + elec_fault * rng.uniform(0.15, 0.45, size=n)
-        + 0.04 * (vechime_ani / 10.0)
-    ).astype(np.float32)
-
-    # Airflow degrades when air_fault under load
-    trend_air_raw = (
-        rng.normal(0.00, 0.40, size=n)
-        + air_fault * rng.uniform(1.2, 3.2, size=n) * (map_kpa > 55).astype(np.float32)
-    ).astype(np.float32)
-
-    # t1 values
-    coolant = coolant_t0 + trend_temp_raw + cooling_fault * rng.uniform(2, 8, size=n).astype(np.float32)
-    oil = oil_t0 + 0.6 * trend_temp_raw + lube_fault * rng.uniform(2, 9, size=n).astype(np.float32)
-    oilp = oilp_t0 - trend_pressure_raw - lube_fault * rng.uniform(0.3, 1.0, size=n).astype(np.float32)
-    vibr = vibr_t0 + trend_vibr_raw
-    batt = battery_t0 - trend_batt_raw
-    maf = maf_t0 - trend_air_raw
-
-    coolant_temp_c = np.clip(coolant, 70, 134).astype(np.float32)
-    oil_temp_c = np.clip(oil, 75, 150).astype(np.float32)
-    oil_pressure_bar = np.clip(oilp, 0.35, 4.2).astype(np.float32)
-    vibratii_relanti = np.clip(vibr, 0.8, 7.0).astype(np.float32)
-    battery_v = np.clip(batt, 9.3, 14.8).astype(np.float32)
-    maf_gps = np.clip(maf, 1.2, 25.0).astype(np.float32)
-
-    delta_temp = (oil_temp_c - coolant_temp_c).astype(np.float32)
-
-    pressure_low = (oil_pressure_bar < 1.20).astype(int)
-    pressure_very_low = (oil_pressure_bar < 0.90).astype(int)
-
-    coolant_overheat = (coolant_temp_c > 102.0).astype(int)
-    oil_overheat = (oil_temp_c > 115.0).astype(int)
-
-    battery_low = (battery_v < 12.2).astype(int)
-    vibratii_high = (vibratii_relanti > 3.2).astype(int)
-
-    maf_expected = 2.6 + 0.20 * map_kpa
-    airflow_mismatch = ((maf_gps < (maf_expected - 2.2)) & (map_kpa > 55)).astype(int)
-
-    pressure_margin = (oil_pressure_bar - 1.20).astype(np.float32)
-
-    pressure_expected = (
-        3.0
-        - 0.020 * (oil_temp_c - 95.0)
-        + 0.004 * (map_kpa - 35.0)
-        - 0.020 * (vechime_ani - 6.0)
-    ).astype(np.float32)
-
-    pressure_residual = (oil_pressure_bar - pressure_expected).astype(np.float32)
-
-    # Trend features normalized (like before)
-    trend_temp = np.clip(trend_temp_raw / 5.0, -1.0, 2.0).astype(np.float32)
-    trend_pressure = np.clip(trend_pressure_raw / 0.35, -1.0, 2.0).astype(np.float32)
-    trend_vibratii = np.clip(trend_vibr_raw / 0.35, -1.0, 2.0).astype(np.float32)
-    trend_battery = np.clip(trend_batt_raw / 0.60, -1.0, 2.0).astype(np.float32)
-
-    anomaly_count = (
-        coolant_overheat
-        + oil_overheat
-        + pressure_low
-        + pressure_very_low
-        + battery_low
-        + vibratii_high
-        + airflow_mismatch
-        + service_overdue.astype(int)
-    ).astype(np.float32)
-
-    temp_stress = (
-        np.maximum(0.0, coolant_temp_c - 98.0) / 20.0
-        + np.maximum(0.0, oil_temp_c - 110.0) / 25.0
-        + np.maximum(0.0, delta_temp - 18.0) / 18.0
-    ).astype(np.float32)
-
-    pressure_stress = (
-        np.maximum(0.0, 1.30 - oil_pressure_bar) / 1.30
-        + np.maximum(0.0, -pressure_residual) / 1.20
-    ).astype(np.float32)
-
-    # Health index (0..1)
-    health_index = (
-        0.42 * temp_stress
-        + 0.55 * pressure_stress
-        + 0.22 * trend_temp
-        + 0.35 * trend_pressure
-        + 0.18 * trend_vibratii
-        + 0.12 * trend_battery
-        + 0.18 * (anomaly_count / 8.0)
-        + rng.normal(0, 0.06, size=n).astype(np.float32)
-    ).astype(np.float32)
-    health_index = np.clip(health_index, 0.0, 4.0).astype(np.float32)
-    health_index = (health_index / 4.0).astype(np.float32)
-
-    # ===== Label (DEFECT) - now strongly tied to trend/stress =====
-    # This is the critical fix vs your weak V5.
-    raw_score = (
-        0.8 * cooling_fault
-        + 1.0 * lube_fault
-        + 0.6 * air_fault
-        + 0.6 * elec_fault
-        + 2.2 * health_index
-        + 0.60 * temp_stress
-        + 0.90 * pressure_stress
-        + 0.50 * (anomaly_count / 8.0)
-        + 0.55 * np.maximum(0.0, trend_pressure)   # pressure drop is very predictive
-        + 0.35 * np.maximum(0.0, trend_temp)
-        + rng.normal(0, 0.18, size=n).astype(np.float32)
-    ).astype(np.float32)
-
-    b = calibrate_intercept(raw_score, defect_target, iters=90)
-    p_def = sigmoid(raw_score + b).astype(np.float32)
-    defect = (rng.random(n) < p_def).astype(np.int32)
-
-    if label_noise and float(label_noise) > 0:
-        flip = (rng.random(n) < float(label_noise))
-        defect = np.where(flip, 1 - defect, defect).astype(np.int32)
-
-    kilometraj_total_t1 = np.clip(kilometraj_total + delta_km, 5000, 450000).astype(np.float32)
-
-    df = pd.DataFrame(
-        {
-            "kilometraj_total": np.round(kilometraj_total_t1, 0).astype(int),
-            "vechime_ani": np.round(vechime_ani, 0).astype(int),
-            "coolant_temp_c": np.round(coolant_temp_c, 2),
-            "oil_temp_c": np.round(oil_temp_c, 2),
-            "oil_pressure_bar": np.round(oil_pressure_bar, 3),
-            "maf_gps": np.round(maf_gps, 2),
-            "map_kpa": np.round(map_kpa, 2),
-            "battery_v": np.round(battery_v, 2),
-            "vibratii_relanti": np.round(vibratii_relanti, 2),
-            "zile_de_la_ultima_revizie": np.round(zile_de_la_ultima_revizie, 0).astype(int),
-            "delta_temp": np.round(delta_temp, 2),
-            "pressure_low": pressure_low.astype(int),
-            "pressure_very_low": pressure_very_low.astype(int),
-            "service_overdue": service_overdue.astype(int),
-            "coolant_overheat": coolant_overheat.astype(int),
-            "oil_overheat": oil_overheat.astype(int),
-            "battery_low": battery_low.astype(int),
-            "vibratii_high": vibratii_high.astype(int),
-            "airflow_mismatch": airflow_mismatch.astype(int),
-            "pressure_margin": np.round(pressure_margin, 3),
-            "pressure_expected": np.round(pressure_expected, 3),
-            "pressure_residual": np.round(pressure_residual, 3),
-
-            "delta_days": np.round(delta_days, 0).astype(int),
-            "delta_km": np.round(delta_km, 0).astype(int),
-            "trend_temp": np.round(trend_temp, 4),
-            "trend_pressure": np.round(trend_pressure, 4),
-            "trend_vibratii": np.round(trend_vibratii, 4),
-            "trend_battery": np.round(trend_battery, 4),
-            "anomaly_count": np.round(anomaly_count, 0).astype(int),
-            "temp_stress": np.round(temp_stress, 4),
-            "pressure_stress": np.round(pressure_stress, 4),
-            "health_index": np.round(health_index, 4),
-
-            "defect": defect.astype(int),
-        }
-    )
-
+    df = pd.DataFrame(rows)
     return df
 
 
 def main():
-    root = Path(__file__).resolve().parents[2]
-    out = root / "data" / "raw" / "dataset_auto.csv"
-    out.parent.mkdir(parents=True, exist_ok=True)
+    root = get_root()
+    out_dir = root / "data" / "raw"
+    out_dir.mkdir(parents=True, exist_ok=True)
+    out_path = out_dir / "dataset_auto.csv"
 
-    df = generate_dataset(n=12000, defect_target=0.25, seed=42, label_noise=0.0)
-    df.to_csv(out, index=False)
-
-    print(f"Saved: {out}")
-    print(f"randuri={len(df)} defect_rate={df['defect'].mean()*100:.2f}%")
-    print(df.head(5).to_string(index=False))
+    df = generate(n_rows=12000, defect_target=0.25, seed=42, label_noise=0.02)
+    df.to_csv(out_path, index=False)
+    rate = float(df["defect"].mean())
+    print(f"Saved: {out_path}")
+    print(f"rows={len(df)} defect_rate={rate:.3f}")
 
 
 if __name__ == "__main__":

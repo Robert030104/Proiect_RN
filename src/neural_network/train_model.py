@@ -4,7 +4,8 @@ import numpy as np
 import pandas as pd
 import torch
 import torch.nn as nn
-from torch.utils.data import DataLoader, TensorDataset
+import torch.nn.functional as F
+from torch.utils.data import DataLoader, TensorDataset, WeightedRandomSampler
 from sklearn.metrics import roc_auc_score
 
 from model import MLP
@@ -14,8 +15,8 @@ def get_root() -> Path:
     return Path(__file__).resolve().parents[2]
 
 
-def load_scaler(root: Path):
-    scaler_path = root / "scaler.pkl"
+def load_scaler(root: Path, scaler_rel: str = "scaler.pkl"):
+    scaler_path = (root / scaler_rel).resolve()
     if not scaler_path.exists():
         raise FileNotFoundError(f"Lipseste: {scaler_path}")
     with open(scaler_path, "rb") as f:
@@ -55,6 +56,8 @@ def _load_xy(x_path: Path, y_path: Path, feature_names, mean, scale):
     else:
         y = pd.to_numeric(ydf.iloc[:, 0], errors="coerce").fillna(0).astype(int).values.astype(np.float32)
 
+    y = np.where(y >= 0.5, 1.0, 0.0).astype(np.float32)
+
     missing = [c for c in feature_names if c not in Xdf.columns]
     if missing:
         raise ValueError(f"Lipsesc coloane in {x_path}: {missing}")
@@ -71,6 +74,23 @@ def _load_xy(x_path: Path, y_path: Path, feature_names, mean, scale):
     return X, y
 
 
+class FocalLoss(nn.Module):
+    def __init__(self, alpha=0.55, gamma=2.0):
+        super().__init__()
+        self.alpha = float(alpha)
+        self.gamma = float(gamma)
+
+    def forward(self, logits, targets):
+        targets = targets.view(-1)
+        logits = logits.view(-1)
+        bce = F.binary_cross_entropy_with_logits(logits, targets, reduction="none")
+        p = torch.sigmoid(logits)
+        pt = targets * p + (1.0 - targets) * (1.0 - p)
+        w = self.alpha * targets + (1.0 - self.alpha) * (1.0 - targets)
+        loss = w * ((1.0 - pt) ** self.gamma) * bce
+        return loss.mean()
+
+
 def eval_auc_loss(model, loader, criterion, device):
     model.eval()
     losses = []
@@ -80,8 +100,8 @@ def eval_auc_loss(model, loader, criterion, device):
         for xb, yb in loader:
             xb = xb.to(device)
             yb = yb.to(device)
-            logits = model(xb)
-            loss = criterion(logits, yb)
+            logits = model(xb).view(-1)
+            loss = criterion(logits, yb.view(-1))
             losses.append(float(loss.item()))
             prob = torch.sigmoid(logits).detach().cpu().numpy()
             probs_all.append(prob)
@@ -102,7 +122,7 @@ def get_probs(model, loader, device):
         for xb, yb in loader:
             xb = xb.to(device)
             yb = yb.to(device)
-            logits = model(xb)
+            logits = model(xb).view(-1)
             prob = torch.sigmoid(logits).detach().cpu().numpy()
             probs_all.append(prob)
             y_all.append(yb.detach().cpu().numpy())
@@ -111,7 +131,7 @@ def get_probs(model, loader, device):
     return y, p
 
 
-def pick_threshold_max_fpr(y, p, max_fpr=0.115):
+def pick_threshold_max_fpr(y, p, max_fpr=0.13):
     order = np.argsort(p)[::-1]
     p_sorted = p[order]
     y_sorted = y[order]
@@ -132,20 +152,24 @@ def pick_threshold_max_fpr(y, p, max_fpr=0.115):
     return float(best_thr), bool(found)
 
 
-def train(
-    pos_mult=1.30,          # V5: trend-uri ajuta, nu mai impingem prea tare
-    batch_size=256,
-    lr=7e-4,
+def train_optimized(
+    save_name="optimized_model.pt",
+    scaler_rel="scaler.pkl",
+    alpha=0.55,
+    gamma=2.0,
+    batch_size=64,
+    lr=2e-4,
     weight_decay=1e-4,
-    max_epochs=160,         # un pic mai mult, dar se opreste pe early stop
-    patience=22,
-    max_fpr=0.13,          # tinta ~12 alarme false / 100 OK
+    max_epochs=420,
+    patience=45,
+    max_fpr=0.13,
 ):
     root = get_root()
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    print(f"root={root}")
     print(f"device={device}")
 
-    scaler_path, feature_names, mean, scale = load_scaler(root)
+    scaler_path, feature_names, mean, scale = load_scaler(root, scaler_rel)
     (trX, trY), (vaX, vaY), (teX, teY) = _find_xy_splits(root)
 
     Xtr, ytr = _load_xy(trX, trY, feature_names, mean, scale)
@@ -154,23 +178,27 @@ def train(
     defect_rate_train = float(ytr.mean()) if len(ytr) else 0.0
     print(f"train_rows={len(ytr)} val_rows={len(yva)} defect_rate_train={defect_rate_train:.3f}")
 
-    pos = max(float(ytr.sum()), 1.0)
-    neg = max(float(len(ytr) - ytr.sum()), 1.0)
-    pos_weight_base = neg / pos
-    pos_weight_used = pos_weight_base * float(pos_mult)
-    print(f"pos_weight_base={pos_weight_base:.3f} pos_mult={pos_mult:.2f} pos_weight_used={pos_weight_used:.3f}")
+    ytr_int = ytr.astype(int)
+    class_counts = np.bincount(ytr_int, minlength=2).astype(np.float64)
+    class_counts = np.maximum(class_counts, 1.0)
+    class_w = (class_counts.sum() / (2.0 * class_counts)).astype(np.float32)
+    sample_w = class_w[ytr_int]
+    sampler = WeightedRandomSampler(
+        weights=torch.tensor(sample_w, dtype=torch.float32),
+        num_samples=len(sample_w),
+        replacement=True,
+    )
 
     model = MLP(len(feature_names)).to(device)
-    criterion = nn.BCEWithLogitsLoss(pos_weight=torch.tensor([pos_weight_used], device=device))
+    criterion = FocalLoss(alpha=alpha, gamma=gamma)
     optimizer = torch.optim.AdamW(model.parameters(), lr=lr, weight_decay=weight_decay)
-
     scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
-        optimizer, mode="max", factor=0.5, patience=4, min_lr=1e-5
+        optimizer, mode="max", factor=0.5, patience=6, min_lr=5e-6
     )
 
     tr_loader = DataLoader(
         TensorDataset(torch.tensor(Xtr), torch.tensor(ytr)),
-        batch_size=batch_size, shuffle=True, drop_last=False
+        batch_size=batch_size, sampler=sampler, drop_last=False
     )
     va_loader = DataLoader(
         TensorDataset(torch.tensor(Xva), torch.tensor(yva)),
@@ -188,19 +216,19 @@ def train(
         train_losses = []
         for xb, yb in tr_loader:
             xb = xb.to(device)
-            yb = yb.to(device)
+            yb = yb.to(device).view(-1)
 
             optimizer.zero_grad(set_to_none=True)
-            logits = model(xb)
+            logits = model(xb).view(-1)
             loss = criterion(logits, yb)
             loss.backward()
+            torch.nn.utils.clip_grad_norm_(model.parameters(), 2.0)
             optimizer.step()
             train_losses.append(float(loss.item()))
 
         tr_loss = float(np.mean(train_losses)) if train_losses else 0.0
         val_auc, val_loss = eval_auc_loss(model, va_loader, criterion, device)
         lr_now = optimizer.param_groups[0]["lr"]
-
         print(f"ep={ep:03d} loss={tr_loss:.4f} val_loss={val_loss:.4f} val_auc={val_auc:.4f} lr={lr_now:.6f}")
         scheduler.step(val_auc)
 
@@ -227,7 +255,7 @@ def train(
 
     out_dir = root / "models"
     out_dir.mkdir(parents=True, exist_ok=True)
-    model_path = out_dir / "model_predictie_defecte.pth"
+    model_path = out_dir / save_name
 
     torch.save(
         {
@@ -240,9 +268,13 @@ def train(
             "threshold_auto": float(thr_auto),
             "threshold_rule": "max_fpr",
             "max_fpr": float(max_fpr),
-            "loss_name": "bce",
-            "pos_mult": float(pos_mult),
-            "pos_weight_used": float(pos_weight_used),
+            "loss_name": "focal",
+            "focal_alpha": float(alpha),
+            "focal_gamma": float(gamma),
+            "batch_size": int(batch_size),
+            "lr": float(lr),
+            "weight_decay": float(weight_decay),
+            "sampler": "weighted_random",
         },
         model_path,
     )
@@ -250,11 +282,7 @@ def train(
     print(f"Saved: {model_path}")
     print(f"Best AUC: {best_auc:.4f}  Best epoch: {best_epoch}")
     print(f"Auto threshold (val, max_fpr={max_fpr:.3f}): {thr_auto:.3f}  found={found}")
-    print("Splits used:")
-    print(f"  train: {trX} | {trY}")
-    print(f"  val:   {vaX} | {vaY}")
-    print(f"  test:  {teX} | {teY}")
 
 
 if __name__ == "__main__":
-    train()
+    train_optimized()

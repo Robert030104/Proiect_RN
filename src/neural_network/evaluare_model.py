@@ -1,139 +1,193 @@
+import argparse
 from pathlib import Path
+import json
 import pickle
 import numpy as np
 import pandas as pd
 import torch
-from sklearn.metrics import roc_auc_score, average_precision_score, confusion_matrix, classification_report
+from sklearn.metrics import accuracy_score, f1_score, precision_score, recall_score, roc_auc_score, confusion_matrix
+
+import matplotlib.pyplot as plt
 
 from model import MLP
 
 
-def get_root():
+def get_root() -> Path:
     return Path(__file__).resolve().parents[2]
 
 
-def load_scaler(root: Path):
-    sp = root / "scaler.pkl"
-    if not sp.exists():
-        raise FileNotFoundError(f"Lipseste: {sp}")
-    with open(sp, "rb") as f:
+def load_scaler(path: Path):
+    with open(path, "rb") as f:
         sc = pickle.load(f)
-    feat = list(sc["feature_names"])
+    feature_names = list(sc["feature_names"])
     mean = np.array(sc["mean"], dtype=np.float32)
     scale = np.array(sc["scale"], dtype=np.float32)
-    return feat, mean, scale
+    return feature_names, mean, scale
 
 
-def load_test_xy(root: Path, feat, mean, scale):
-    x_path = root / "data" / "test" / "X_test.csv"
-    y_path = root / "data" / "test" / "y_test.csv"
-    if not x_path.exists():
-        raise FileNotFoundError(f"Lipseste: {x_path}")
-    if not y_path.exists():
-        raise FileNotFoundError(f"Lipseste: {y_path}")
+def load_checkpoint(path: Path):
+    ckpt = torch.load(path, map_location="cpu")
+    if isinstance(ckpt, dict) and "state_dict" in ckpt:
+        state = ckpt["state_dict"]
+        meta = {k: v for k, v in ckpt.items() if k != "state_dict"}
+        return state, meta
+    if isinstance(ckpt, dict):
+        return ckpt, {}
+    return ckpt, {}
 
-    Xdf = pd.read_csv(x_path)
-    ydf = pd.read_csv(y_path)
 
-    if "defect" in ydf.columns:
-        y = pd.to_numeric(ydf["defect"], errors="coerce").fillna(0).astype(int).values
+def read_y(path: Path):
+    df = pd.read_csv(path)
+    if "defect" in df.columns:
+        y = pd.to_numeric(df["defect"], errors="coerce").fillna(0).astype(int).values
     else:
-        y = pd.to_numeric(ydf.iloc[:, 0], errors="coerce").fillna(0).astype(int).values
+        y = pd.to_numeric(df.iloc[:, 0], errors="coerce").fillna(0).astype(int).values
+    y = np.where(y >= 0.5, 1, 0).astype(int)
+    return y
 
-    missing = [c for c in feat if c not in Xdf.columns]
+
+def preprocess_X(x_path: Path, feature_names, mean, scale):
+    Xdf = pd.read_csv(x_path)
+
+    missing = [c for c in feature_names if c not in Xdf.columns]
     if missing:
         raise ValueError(f"Lipsesc coloane in {x_path}: {missing}")
 
-    X = Xdf[feat].copy()
-    for c in feat:
+    X = Xdf[feature_names].copy()
+    for c in feature_names:
         X[c] = pd.to_numeric(X[c], errors="coerce")
+
     if X.isna().any().any():
         X = X.fillna(X.median(numeric_only=True))
 
     X = X.values.astype(np.float32)
     X = (X - mean) / (scale + 1e-12)
-    return X, y
+    return X
 
 
-def report_at_threshold(y, p, thr):
-    pred = (p >= thr).astype(int)
-    cm = confusion_matrix(y, pred)
-    tn, fp, fn, tp = cm.ravel()
-
-    acc = (tp + tn) / max(len(y), 1)
-    precision = tp / max((tp + fp), 1)
-    recall = tp / max((tp + fn), 1)
-
-    fpr = fp / max((fp + tn), 1)
-    tnr = tn / max((tn + fp), 1)
-    fnr = fn / max((fn + tp), 1)
-
-    rep = classification_report(y, pred, target_names=["OK", "Defect"], digits=4)
-    return tn, fp, fn, tp, acc, precision, recall, fpr, tnr, fnr, rep
-
-
-def evaluate():
-    root = get_root()
-    model_path = root / "models" / "model_predictie_defecte.pth"
-    if not model_path.exists():
-        raise FileNotFoundError(f"Lipseste: {model_path}")
-
-    feat, mean, scale = load_scaler(root)
-    X, y = load_test_xy(root, feat, mean, scale)
-
-    ckpt = torch.load(model_path, map_location="cpu")
-    model = MLP(int(ckpt["input_dim"]))
-    model.load_state_dict(ckpt["state_dict"])
+@torch.no_grad()
+def predict_proba(model, X_np, batch_size=1024):
     model.eval()
+    X = torch.tensor(X_np, dtype=torch.float32)
+    probs = []
+    for i in range(0, X.shape[0], batch_size):
+        xb = X[i:i + batch_size]
+        logits = model(xb)
+        if logits.ndim == 2 and logits.shape[1] == 1:
+            logits = logits.squeeze(1)
+        probs.append(torch.sigmoid(logits).cpu().numpy())
+    return np.concatenate(probs, axis=0).reshape(-1)
 
-    with torch.no_grad():
-        logits = model(torch.tensor(X, dtype=torch.float32))
-        p = torch.sigmoid(logits).numpy().reshape(-1)
 
-    roc = roc_auc_score(y, p) if len(np.unique(y)) > 1 else 0.5
-    pr = average_precision_score(y, p) if len(np.unique(y)) > 1 else 0.0
+def pick_threshold(meta: dict, fallback=0.5):
+    if "threshold_f1" in meta:
+        return float(meta["threshold_f1"]), "threshold_f1"
+    if "threshold_auto" in meta:
+        return float(meta["threshold_auto"]), "threshold_auto"
+    return float(fallback), "default"
 
-    thr = float(ckpt.get("threshold_auto", 0.60))
-    rule = ckpt.get("threshold_rule", "fixed")
-    max_fpr = float(ckpt.get("max_fpr", 0.11))
 
-    tn, fp, fn, tp, acc, prec, rec, fpr, tnr, fnr, rep = report_at_threshold(y, p, thr)
+def save_confusion_png(cm, out_path: Path, title: str):
+    plt.figure(figsize=(6.4, 5.2))
+    plt.imshow(cm, interpolation="nearest")
+    plt.title(title)
+    plt.colorbar()
+    ticks = np.arange(2)
+    plt.xticks(ticks, ["Normal", "Defect"])
+    plt.yticks(ticks, ["Normal", "Defect"])
 
-    print("=== EVALUARE TEST (clar) ===")
-    print(f"Model: {model_path}")
-    print(f"Test samples: {len(y)} | Defect rate: {y.mean()*100:.2f}%")
-    print(f"ROC-AUC: {roc:.4f}")
-    print(f"PR-AUC:  {pr:.4f}")
+    thresh = cm.max() * 0.55 if cm.max() > 0 else 0.5
+    for i in range(2):
+        for j in range(2):
+            val = int(cm[i, j])
+            plt.text(j, i, f"{val}", ha="center", va="center",
+                     color="white" if cm[i, j] > thresh else "black")
 
-    loss_name = ckpt.get("loss_name", "bce")
-    print(f"Loss: {loss_name} pos_mult={ckpt.get('pos_mult', 'n/a')}")
+    plt.ylabel("True")
+    plt.xlabel("Predicted")
+    plt.tight_layout()
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    plt.savefig(out_path, dpi=180)
+    plt.close()
 
-    print()
-    print("--- Prag folosit ---")
-    if rule == "max_fpr":
-        print(f"regula: max_fpr={max_fpr:.3f}")
+
+def main():
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--model", default="models/optimized_model.pt")
+    ap.add_argument("--x", default="data/test/X_test.csv")
+    ap.add_argument("--y", default="data/test/y_test.csv")
+    ap.add_argument("--scaler", default="scaler.pkl")
+    ap.add_argument("--threshold", type=float, default=None)
+    ap.add_argument("--save_cm", action="store_true")
+    args = ap.parse_args()
+
+    root = get_root()
+
+    model_path = (root / args.model).resolve() if not Path(args.model).is_absolute() else Path(args.model)
+    x_path = (root / args.x).resolve() if not Path(args.x).is_absolute() else Path(args.x)
+    y_path = (root / args.y).resolve() if not Path(args.y).is_absolute() else Path(args.y)
+    scaler_path = (root / args.scaler).resolve() if not Path(args.scaler).is_absolute() else Path(args.scaler)
+
+    feature_names, mean, scale = load_scaler(scaler_path)
+    X = preprocess_X(x_path, feature_names, mean, scale)
+    y_true = read_y(y_path)
+
+    state, meta = load_checkpoint(model_path)
+    input_dim = int(meta.get("input_dim", len(feature_names)))
+    if input_dim != len(feature_names):
+        input_dim = len(feature_names)
+
+    model = MLP(input_dim)
+    model.load_state_dict(state, strict=True)
+
+    p = predict_proba(model, X)
+
+    if args.threshold is not None:
+        thr = float(args.threshold)
+        thr_src = "cli"
     else:
-        print("regula: fixed")
-    print(f"prag probabilitate: {thr:.3f}")
-    print()
-    print("--- Confusion matrix ---")
-    print(f"TN (OK prezis OK):        {tn}")
-    print(f"FP (OK prezis Defect):    {fp}   <- alarme false")
-    print(f"FN (Defect prezis OK):    {fn}   <- defecte ratate")
-    print(f"TP (Defect prezis Defect):{tp}")
-    print()
-    print("--- Metrici usor de inteles ---")
-    print(f"Accuracy:   {acc:.3f}")
-    print(f"Precision (Defect): {prec:.3f}")
-    print(f"Recall (Defect):    {rec:.3f}")
-    print(f"FPR:        {fpr:.3f}")
-    print(f"TNR:        {tnr:.3f}")
-    print(f"FNR:        {fnr:.3f}")
-    print(f"Alarme false la 100 OK: {fpr*100:.1f}")
-    print()
-    print("--- Raport clasificare ---")
-    print(rep)
+        thr, thr_src = pick_threshold(meta, fallback=0.5)
+
+    y_pred = (p >= thr).astype(int)
+
+    acc = float(accuracy_score(y_true, y_pred))
+    f1 = float(f1_score(y_true, y_pred, zero_division=0))
+    prec = float(precision_score(y_true, y_pred, zero_division=0))
+    rec = float(recall_score(y_true, y_pred, zero_division=0))
+    auc = float(roc_auc_score(y_true, p)) if len(np.unique(y_true)) > 1 else 0.5
+    cm = confusion_matrix(y_true, y_pred, labels=[0, 1])
+
+    out_res = root / "results"
+    out_res.mkdir(parents=True, exist_ok=True)
+    out_json = out_res / "final_metrics.json"
+
+    payload = {
+        "model_path": str(model_path),
+        "x_path": str(x_path),
+        "y_path": str(y_path),
+        "threshold_used": thr,
+        "threshold_source": thr_src,
+        "accuracy": acc,
+        "f1": f1,
+        "precision": prec,
+        "recall": rec,
+        "auc": auc,
+        "confusion_matrix": cm.tolist(),
+        "feature_names": feature_names,
+    }
+
+    with open(out_json, "w", encoding="utf-8") as f:
+        json.dump(payload, f, indent=2)
+
+    if args.save_cm:
+        out_cm = root / "docs" / "screenshots" / "confusion_matrix_optimized.png"
+        save_confusion_png(cm, out_cm, "Confusion Matrix - Optimized")
+
+    print(f"acc={acc:.4f} f1={f1:.4f} auc={auc:.4f} thr={thr:.3f} ({thr_src})")
+    print(f"Saved: {out_json}")
+    if args.save_cm:
+        print(f"Saved: {root / 'docs' / 'screenshots' / 'confusion_matrix_optimized.png'}")
 
 
 if __name__ == "__main__":
-    evaluate()
+    main()

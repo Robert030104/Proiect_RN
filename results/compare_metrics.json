@@ -1,0 +1,34 @@
+{
+  "trained": {
+    "model_path": "models/trained_model.pt",
+    "scaler_path": "D:\\Proiect_RN\\Proiect_RN\\scaler.pkl",
+    "threshold": 0.5408069491386414,
+    "accuracy": 0.77,
+    "precision_defect": 0.555256064690027,
+    "recall_defect": 0.45274725274725275,
+    "f1_defect": 0.49878934624697335,
+    "roc_auc": 0.711792148372074,
+    "confusion_matrix": {
+      "tn": 1180,
+      "fp": 165,
+      "fn": 249,
+      "tp": 206
+    }
+  },
+  "optimized": {
+    "model_path": "models/optimized_model.pt",
+    "scaler_path": "D:\\Proiect_RN\\Proiect_RN\\scaler.pkl",
+    "threshold": 0.5976301431655884,
+    "accuracy": 0.7733333333333333,
+    "precision_defect": 0.5633423180592992,
+    "recall_defect": 0.4593406593406593,
+    "f1_defect": 0.5060532687651331,
+    "roc_auc": 0.711190816618326,
+    "confusion_matrix": {
+      "tn": 1183,
+      "fp": 162,
+      "fn": 246,
+      "tp": 209
+    }
+  }
+}

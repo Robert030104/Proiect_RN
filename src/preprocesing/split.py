@@ -1,68 +1,71 @@
-# src/preprocesing/split.py
 from pathlib import Path
+import numpy as np
 import pandas as pd
-from sklearn.model_selection import train_test_split
 
 
-def get_root():
+def get_root() -> Path:
     return Path(__file__).resolve().parents[2]
 
 
-def split():
-    root = get_root()
-    proc_path = root / "data" / "processed" / "dataset_processed.csv"
-    if not proc_path.exists():
-        raise FileNotFoundError(f"Nu exista: {proc_path}")
+def save_pair(out_dir: Path, x_name: str, y_name: str, X: pd.DataFrame, y: pd.Series):
+    out_dir.mkdir(parents=True, exist_ok=True)
+    X.to_csv(out_dir / x_name, index=False)
+    y.to_csv(out_dir / y_name, index=False)
 
-    df = pd.read_csv(proc_path)
-    if "defect" not in df.columns:
-        raise ValueError("Lipseste coloana 'defect' in dataset_processed.csv")
+
+def stratified_split(df, y_col="defect", seed=42, test_size=0.15, val_size=0.15):
+    rng = np.random.default_rng(seed)
+
+    idx0 = df.index[df[y_col] == 0].to_numpy()
+    idx1 = df.index[df[y_col] == 1].to_numpy()
+    rng.shuffle(idx0)
+    rng.shuffle(idx1)
+
+    def split_idx(idx):
+        n = len(idx)
+        n_test = int(round(n * test_size))
+        n_val = int(round(n * val_size))
+        test = idx[:n_test]
+        val = idx[n_test:n_test + n_val]
+        train = idx[n_test + n_val:]
+        return train, val, test
+
+    tr0, va0, te0 = split_idx(idx0)
+    tr1, va1, te1 = split_idx(idx1)
+
+    train_idx = np.concatenate([tr0, tr1])
+    val_idx = np.concatenate([va0, va1])
+    test_idx = np.concatenate([te0, te1])
+
+    rng.shuffle(train_idx)
+    rng.shuffle(val_idx)
+    rng.shuffle(test_idx)
+
+    return train_idx, val_idx, test_idx
+
+
+def main():
+    root = get_root()
+    in_path = root / "data" / "processed" / "dataset_processed.csv"
+    df = pd.read_csv(in_path)
 
     y = df["defect"].astype(int)
     X = df.drop(columns=["defect"])
 
-    # 70% train, 30% temp (val+test)
-    X_tr, X_tmp, y_tr, y_tmp = train_test_split(
-        X, y, test_size=0.30, random_state=42, stratify=y
-    )
+    tr_idx, va_idx, te_idx = stratified_split(df, y_col="defect", seed=42, test_size=0.15, val_size=0.15)
 
-    # 15% val, 15% test (din total)
-    X_val, X_te, y_val, y_te = train_test_split(
-        X_tmp, y_tmp, test_size=0.50, random_state=42, stratify=y_tmp
-    )
+    X_train, y_train = X.loc[tr_idx].reset_index(drop=True), y.loc[tr_idx].reset_index(drop=True)
+    X_val, y_val = X.loc[va_idx].reset_index(drop=True), y.loc[va_idx].reset_index(drop=True)
+    X_test, y_test = X.loc[te_idx].reset_index(drop=True), y.loc[te_idx].reset_index(drop=True)
 
-    def save_split(name, Xp, yp):
-        d = root / "data" / name
-        d.mkdir(parents=True, exist_ok=True)
+    save_pair(root / "data" / "train", "X_train.csv", "y_train.csv", X_train, y_train)
+    save_pair(root / "data" / "validation", "X_val.csv", "y_val.csv", X_val, y_val)
+    save_pair(root / "data" / "test", "X_test.csv", "y_test.csv", X_test, y_test)
 
-        # IMPORTANT: numele exacte pe care le cauta train_model.py
-        if name == "train":
-            x_path = d / "X_train.csv"
-            y_path = d / "y_train.csv"
-        elif name == "validation":
-            x_path = d / "X_val.csv"
-            y_path = d / "y_val.csv"
-        elif name == "test":
-            x_path = d / "X_test.csv"
-            y_path = d / "y_test.csv"
-        else:
-            x_path = d / f"X_{name}.csv"
-            y_path = d / f"y_{name}.csv"
-
-        Xp.to_csv(x_path, index=False)
-        yp.to_csv(y_path, index=False)
-
-        print(f"Saved: {x_path} (cols={Xp.shape[1]})")
-        print(f"Saved: {y_path}")
-
-    save_split("train", X_tr, y_tr)
-    save_split("validation", X_val, y_val)
-    save_split("test", X_te, y_te)
-
-    print(f"Train: {len(y_tr)}  Val: {len(y_val)}  Test: {len(y_te)}")
-    print(f"Rates: {y_tr.mean():.3f} / {y_val.mean():.3f} / {y_te.mean():.3f}")
-    print(f"Features saved: {X.shape[1]}")
+    print(f"train: rows={len(y_train)} defect_rate={float(y_train.mean()):.3f}")
+    print(f"val:   rows={len(y_val)} defect_rate={float(y_val.mean()):.3f}")
+    print(f"test:  rows={len(y_test)} defect_rate={float(y_test.mean()):.3f}")
 
 
 if __name__ == "__main__":
-    split()
+    main()

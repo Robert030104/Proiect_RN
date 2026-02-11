@@ -3,18 +3,24 @@
 **Disciplina:** Rețele Neuronale  
 **Instituție:** POLITEHNICA București – FIIR  
 **Student:** Pintea Robert Stefan  
-**Link Repository GitHub:** [link GitHub]  
-**Data:** [12/12/2025]  
+**Link Repository GitHub:** https://github.com/Robert030104/Proiect_RN  
+**Data:** 12/12/2025  
 
 ---
 
 ## Scopul Etapei 4
 
-Această etapă corespunde punctului **5. Dezvoltarea arhitecturii aplicației software bazată pe RN**.
-Scopul este realizarea unui **schelet complet și funcțional** al unui Sistem cu Inteligență Artificială (SIA),
-care demonstrează rularea pipeline-ului complet de la date până la afișarea rezultatului.
+Această etapă corespunde punctului **5. Dezvoltarea arhitecturii aplicației software bazată pe Rețele Neuronale**
+din specificațiile proiectului.
 
-În această etapă, modelul de rețea neuronală este **doar definit și compilat**, fără antrenare serioasă.
+Scopul este realizarea unui **schelet complet, coerent și funcțional** al unui Sistem cu Inteligență Artificială (SIA),
+care demonstrează rularea pipeline-ului complet:
+**achiziție date → preprocesare → inferență RN → afișare rezultat**.
+
+În această etapă:
+- modelul de rețea neuronală este **doar definit și compilat**
+- NU se urmărește performanță ridicată
+- inferența este demonstrativă (model neantrenat sau dummy)
 
 ---
 
@@ -22,89 +28,125 @@ care demonstrează rularea pipeline-ului complet de la date până la afișarea 
 
 | Nevoie reală concretă | Cum o rezolvă SIA-ul | Modul software responsabil |
 |----------------------|----------------------|----------------------------|
-| Detectarea timpurie a defectiunilor la motoare auto | Analiza parametrilor de functionare (temperaturi, presiuni, vibratii) si clasificare defect / normal | Data Acquisition + RN |
-| Planificarea mentenantei preventive pentru flote auto | Predictie stare tehnica pe baza datelor istorice pentru reducerea avariilor neplanificate | RN + Web UI |
+| Detectarea timpurie a defectelor la motoare auto | Analiza parametrilor de funcționare (temperaturi, presiuni, vibrații, airflow) și clasificare normal / defect | Data Acquisition + RN |
+| Reducerea costurilor de mentenanță neplanificată | Predicție stării tehnice pe baza datelor istorice și curente | RN |
+| Suport decizional pentru utilizator | Afișarea probabilității de defect într-o interfață simplă | UI / Web Service |
 
 ---
 
 ## 2. Contribuția Originală la Setul de Date
 
-### Contribuția originală la setul de date:
+### Contribuția originală
 
-**Total observații finale:** 2000  
-**Observații originale:** 2000 (100%)
+- **Total observații (Etapa 4):** 2000  
+- **Observații originale:** 2000 (100%)
 
-**Tipul contribuției:**
-[X] Date generate prin simulare fizică  
-[ ] Date achiziționate cu senzori proprii  
-[ ] Etichetare/adnotare manuală  
-[ ] Date sintetice prin metode avansate  
+### Tipul contribuției
 
-**Descriere detaliată:**
+- [x] Date generate prin simulare software realistă  
+- [ ] Date achiziționate cu senzori proprii  
+- [ ] Etichetare manuală  
+- [ ] Date externe preluate din alte surse  
 
-Setul de date a fost generat integral prin simulare software, utilizând distribuții statistice
-realiste pentru parametri specifici funcționării motoarelor auto (kilometraj, temperaturi,
-presiune ulei, vibrații, senzori MAF și MAP). Eticheta de defect a fost determinată pe baza
-unor reguli logice inspirate din mentenanța reală a vehiculelor.
+### Descriere detaliată
 
+Setul de date a fost generat integral prin cod Python, utilizând distribuții statistice
+și corelații inspirate din funcționarea reală a motoarelor auto.
 
-**Locația codului:** `src/data_acquisition/dataset.py`  
-**Locația datelor:** `data/raw/dataset_auto.csv`
+Parametrii simulați includ:
+- kilometraj și vechime
+- temperaturi motor și ulei
+- presiune ulei
+- vibrații
+- senzori MAF și MAP
+- parametri de mentenanță (ore / km de la revizie)
+
+Eticheta **`defect`** este determinată printr-un model logic care combină mai mulți factori
+critici (ex: temperatură ridicată + presiune ulei scăzută + vibrații crescute).
+
+### Locații relevante
+
+- **Cod generare date:** `src/data_acquisition/dataset.py`  
+- **Dataset generat:** `data/raw/dataset_auto.csv`
 
 ---
 
 ## 3. Diagrama State Machine a Sistemului
 
-### Justificarea State Machine-ului ales:
+### Justificarea State Machine-ului
 
-A fost aleasă o arhitectură de tip **monitorizare și predicție batch**, deoarece sistemul
-vizează evaluarea stării tehnice a unui vehicul pe baza unui set de parametri măsurați
-periodic sau introduși de utilizator.
+A fost aleasă o arhitectură de tip **monitorizare și predicție batch**, adecvată aplicațiilor
+de mentenanță predictivă, unde datele sunt:
+- introduse manual de utilizator
+- sau citite din fișiere CSV / batch-uri periodice
 
-**Stările principale sunt:**
-1. **IDLE** – sistemul așteaptă date de intrare  
-2. **ACQUIRE_DATA** – datele sunt citite din fișier sau introduse de utilizator  
-3. **PREPROCESS** – datele sunt normalizate și validate  
-4. **RN_INFERENCE** – modelul de rețea neuronală realizează predicția  
-5. **DISPLAY_RESULT** – rezultatul este afișat utilizatorului  
-6. **ERROR** – gestionarea situațiilor de date invalide sau erori de sistem  
+Această abordare permite control clar al fluxului și integrarea facilă a modelului RN.
 
-Starea **ERROR** este esențială deoarece datele pot fi incomplete sau în afara domeniilor
-acceptate, iar sistemul trebuie să gestioneze aceste situații fără a se opri brusc.
+### Stările principale
+
+1. **IDLE**  
+   Sistemul așteaptă date de intrare.
+
+2. **ACQUIRE_DATA**  
+   Datele sunt citite din fișier CSV sau introduse manual prin UI.
+
+3. **PREPROCESS**  
+   Datele sunt validate și scalate folosind parametrii salvați (scaler).
+
+4. **RN_INFERENCE**  
+   Modelul de rețea neuronală realizează predicția (în Etapa 4 – model neantrenat).
+
+5. **DISPLAY_RESULT**  
+   Rezultatul (normal / defect) este afișat utilizatorului.
+
+6. **ERROR**  
+   Gestionarea erorilor (date invalide, valori în afara domeniului).
+
+Starea **ERROR** este esențială pentru robustețea sistemului și evitarea opririlor necontrolate.
+
+Diagrama State Machine este salvată în:
+`docs/state_machine.png`
 
 ---
 
-## 4. Scheletul Complet al Modulelor SIA
+## 4. Arhitectura Modulară a Sistemului SIA
 
-### Modul 1: Data Logging / Acquisition
+### Modul 1: Data Logging / Data Acquisition
 
+- Generează date originale prin simulare
+- Exportă datele în format CSV
+- Structura dataset-ului este compatibilă cu pipeline-ul de preprocesare
 - Codul rulează fără erori
-- Generează un dataset CSV complet original
-- Datele sunt compatibile cu preprocesarea ulterioară
-- Cod localizat în `src/data_acquisition/`
+
+**Locație:** `src/data_acquisition/`
 
 ---
 
 ### Modul 2: Neural Network Module
 
 - Arhitectura rețelei neuronale este definită și compilată
-- Modelul poate fi salvat și încărcat
-- Nu este necesară performanță ridicată în această etapă
-- Cod localizat în `src/neural_network/`
+- Modelul este salvat într-un fișier `.h5`
+- Greutățile sunt inițializate aleator (model neantrenat)
+- Modulul este pregătit pentru antrenare în Etapa 5
+
+**Locație:** `src/neural_network/`  
+**Model:** `models/untrained_model.h5`
 
 ---
 
 ### Modul 3: Web Service / UI
 
-- Interfață simplă pentru introducerea valorilor de intrare
-- Afișează un rezultat de tip defect / normal
-- Implementare minimă realizată cu Streamlit
-- Cod localizat în `src/app/`
-- Screenshot demonstrativ salvat în `docs/screenshots/`
+- Interfață simplă realizată cu **Streamlit**
+- Permite introducerea manuală a parametrilor vehiculului
+- Afișează rezultatul predicției (normal / defect)
+- Demonstrează fluxul complet al State Machine-ului
+
+**Locație:** `src/app/`  
+**Screenshot demo:** `docs/screenshots/ui_demo.png`
 
 ---
 
-## 5. Structura Repository-ului
+## 5. Structura Repository-ului (final Etapa 4)
 
 proiect-rn-pintea-robert/
 ├── data/
@@ -120,11 +162,26 @@ proiect-rn-pintea-robert/
 │ ├── neural_network/
 │ └── app/
 ├── models/
+│ └── untrained_model.h5
 ├── config/
 ├── docs/
 │ ├── state_machine.png
 │ └── screenshots/
+│ └── ui_demo.png
 ├── README.md
-├── README_Etapa3.md
-├── README_Etapa4_Arhitectura_SIA.md
+├── etapa3_analiza_date.md
+├── etapa4_arhitectura_sia.md
 └── requirements.txt
+
+
+---
+
+## 6. Stare Etapă
+
+- [x] Arhitectură SIA complet definită
+- [x] State Machine documentat și implementat logic
+- [x] Modul Data Acquisition funcțional
+- [x] Modul RN definit și compilat (neantrenat)
+- [x] Modul UI funcțional cu model dummy
+- [x] Pipeline complet demonstrat (date → rezultat)
+- [x] Proiect pregătit pentru Etapa 5 – Antrenare Model
