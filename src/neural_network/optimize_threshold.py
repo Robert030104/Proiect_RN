@@ -1,4 +1,5 @@
 import argparse
+from pathlib import Path
 import pickle
 import numpy as np
 import pandas as pd
@@ -6,6 +7,10 @@ import torch
 from sklearn.metrics import accuracy_score, f1_score
 
 from model import MLP
+
+
+def get_root() -> Path:
+    return Path(__file__).resolve().parents[2]
 
 
 def read_y_csv(path):
@@ -17,7 +22,9 @@ def read_y_csv(path):
     return np.where(y >= 0.5, 1, 0).astype(int)
 
 
-def load_scaler_dict(path):
+def load_scaler_dict(path: Path):
+    if not path.exists():
+        raise FileNotFoundError(f"Lipseste scaler: {path}")
     with open(path, "rb") as f:
         sc = pickle.load(f)
     feature_names = list(sc["feature_names"])
@@ -27,17 +34,23 @@ def load_scaler_dict(path):
 
 
 def preprocess_X(X_df, feature_names, mean, scale):
+    missing = [c for c in feature_names if c not in X_df.columns]
+    if missing:
+        raise ValueError(f"Lipsesc coloane in X: {missing}")
+
     X = X_df[feature_names].copy()
     for c in feature_names:
         X[c] = pd.to_numeric(X[c], errors="coerce")
+
     if X.isna().any().any():
         X = X.fillna(X.median(numeric_only=True))
+
     X = X.values.astype(np.float32)
     X = (X - mean) / (scale + 1e-12)
     return X
 
 
-def load_checkpoint(path):
+def load_checkpoint(path: Path):
     ckpt = torch.load(path, map_location="cpu")
     if isinstance(ckpt, dict) and "state_dict" in ckpt:
         return ckpt
@@ -58,20 +71,44 @@ def predict_proba(model, X_np, batch_size=512):
 
 
 def main():
+    root = get_root()
+
     ap = argparse.ArgumentParser()
     ap.add_argument("--model", required=True)
     ap.add_argument("--x", required=True)
     ap.add_argument("--y", required=True)
-    ap.add_argument("--scaler", required=True)
+
+    ap.add_argument(
+        "--scaler",
+        default=str(root / "config" / "scaler.pkl"),
+        help="default: root/config/scaler.pkl"
+    )
+
     ap.add_argument("--min_acc", type=float, default=0.75)
     ap.add_argument("--out_key", default="threshold_f1")
     args = ap.parse_args()
 
-    X_df = pd.read_csv(args.x)
-    y = read_y_csv(args.y)
+    model_path = Path(args.model)
+    model_path = model_path if model_path.is_absolute() else (root / model_path)
+    model_path = model_path.resolve()
 
-    ckpt = load_checkpoint(args.model)
-    feature_names, mean, scale = load_scaler_dict(args.scaler)
+    x_path = Path(args.x)
+    x_path = x_path if x_path.is_absolute() else (root / x_path)
+    x_path = x_path.resolve()
+
+    y_path = Path(args.y)
+    y_path = y_path if y_path.is_absolute() else (root / y_path)
+    y_path = y_path.resolve()
+
+    scaler_path = Path(args.scaler)
+    scaler_path = scaler_path if scaler_path.is_absolute() else (root / scaler_path)
+    scaler_path = scaler_path.resolve()
+
+    X_df = pd.read_csv(x_path)
+    y = read_y_csv(y_path)
+
+    ckpt = load_checkpoint(model_path)
+    feature_names, mean, scale = load_scaler_dict(scaler_path)
     X = preprocess_X(X_df, feature_names, mean, scale)
 
     input_dim = int(ckpt.get("input_dim", X.shape[1]))
@@ -98,9 +135,11 @@ def main():
 
     f1, acc, thr = best
     print(f"best_thr={thr:.3f} f1={f1:.4f} acc={acc:.4f}")
+    print(f"scaler_used={scaler_path}")
 
     ckpt[args.out_key] = float(thr)
-    torch.save(ckpt, args.model)
+    ckpt["scaler_path"] = str(scaler_path)
+    torch.save(ckpt, model_path)
     print(f"updated checkpoint key: {args.out_key}")
 
 

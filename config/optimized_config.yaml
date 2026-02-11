@@ -1,0 +1,46 @@
+project:
+  name: Predictive Maintenance Auto
+  module: neural_network
+  stage: Etapa 6 - Model optimizat
+
+paths:
+  scaler: config/scaler.pkl
+  model_checkpoint: models/optimized_model.pt
+  results_dir: results/
+  docs_results_dir: docs/results/
+  docs_optimization_dir: docs/optimization/
+
+model:
+  type: MLP
+  hidden_layers: [128, 64, 32]
+  input_dim: auto
+
+training:
+  optimizer: AdamW
+  batch_size: 64
+  lr: 0.0002
+  weight_decay: 0.0001
+  max_epochs: 420
+  patience: 45
+  sampler: weighted_random
+
+loss:
+  type: focal
+  alpha: 0.55
+  gamma: 2.0
+
+threshold:
+  strategies:
+    - name: threshold_auto
+      rule: max_fpr
+      max_fpr: 0.13
+    - name: threshold_f1
+      rule: maximize_f1_with_min_accuracy
+      min_acc: 0.75
+    - name: default_0_5
+      rule: fixed
+      value: 0.5
+
+notes:
+  - threshold_auto este ales pe validation pentru a limita alarmele false (FPR).
+  - threshold_f1 poate fi scris in checkpoint cu optimize_threshold.py.

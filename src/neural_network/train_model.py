@@ -1,5 +1,9 @@
 from pathlib import Path
 import pickle
+import json
+import csv
+from datetime import datetime
+
 import numpy as np
 import pandas as pd
 import torch
@@ -15,7 +19,7 @@ def get_root() -> Path:
     return Path(__file__).resolve().parents[2]
 
 
-def load_scaler(root: Path, scaler_rel: str = "scaler.pkl"):
+def load_scaler(root: Path, scaler_rel: str = "config/scaler.pkl"):
     scaler_path = (root / scaler_rel).resolve()
     if not scaler_path.exists():
         raise FileNotFoundError(f"Lipseste: {scaler_path}")
@@ -152,9 +156,114 @@ def pick_threshold_max_fpr(y, p, max_fpr=0.13):
     return float(best_thr), bool(found)
 
 
+def ensure_dir(p: Path):
+    p.mkdir(parents=True, exist_ok=True)
+
+
+def write_csv(path: Path, rows):
+    if not rows:
+        return
+    ensure_dir(path.parent)
+    fieldnames = list(rows[0].keys())
+    with open(path, "w", newline="", encoding="utf-8") as f:
+        w = csv.DictWriter(f, fieldnames=fieldnames)
+        w.writeheader()
+        for r in rows:
+            w.writerow(r)
+
+
+def append_csv(path: Path, row, fieldnames):
+    ensure_dir(path.parent)
+    exists = path.exists()
+    with open(path, "a", newline="", encoding="utf-8") as f:
+        w = csv.DictWriter(f, fieldnames=fieldnames)
+        if not exists:
+            w.writeheader()
+        w.writerow(row)
+
+
+def safe_float(x):
+    try:
+        return float(x)
+    except Exception:
+        return None
+
+
+def metrics_at_threshold(y_true, p_def, thr):
+    y_true = np.asarray(y_true).astype(int).reshape(-1)
+    p_def = np.asarray(p_def).astype(float).reshape(-1)
+    y_pred = (p_def >= float(thr)).astype(int)
+
+    tp = int(((y_true == 1) & (y_pred == 1)).sum())
+    tn = int(((y_true == 0) & (y_pred == 0)).sum())
+    fp = int(((y_true == 0) & (y_pred == 1)).sum())
+    fn = int(((y_true == 1) & (y_pred == 0)).sum())
+
+    acc = (tp + tn) / max(1, (tp + tn + fp + fn))
+    prec = tp / max(1, (tp + fp))
+    rec = tp / max(1, (tp + fn))
+    f1 = (2 * prec * rec) / max(1e-12, (prec + rec))
+    fpr = fp / max(1, (fp + tn))
+
+    return {
+        "val_accuracy": float(acc),
+        "val_precision": float(prec),
+        "val_recall": float(rec),
+        "val_f1": float(f1),
+        "val_fpr": float(fpr),
+        "tp": tp, "tn": tn, "fp": fp, "fn": fn
+    }
+
+
+def write_error_analysis_json(path: Path, feature_names, X_val_scaled, y_true, p_def, thr, meta, top_k=50):
+    y_true = np.asarray(y_true).astype(int).reshape(-1)
+    p_def = np.asarray(p_def).astype(float).reshape(-1)
+    y_pred = (p_def >= float(thr)).astype(int)
+
+    fp_idx = np.where((y_true == 0) & (y_pred == 1))[0]
+    fn_idx = np.where((y_true == 1) & (y_pred == 0))[0]
+
+    fp_sorted = fp_idx[np.argsort(-p_def[fp_idx])] if fp_idx.size else fp_idx
+    fn_sorted = fn_idx[np.argsort(p_def[fn_idx])] if fn_idx.size else fn_idx
+
+    Xv = np.asarray(X_val_scaled, dtype=np.float32)
+
+    def pack(i):
+        x = Xv[i].reshape(-1).tolist()
+        feats = {}
+        for j, name in enumerate(feature_names):
+            feats[name] = safe_float(x[j]) if j < len(x) else None
+        return {
+            "index": int(i),
+            "y_true": int(y_true[i]),
+            "y_pred": int(y_pred[i]),
+            "prob_defect": float(p_def[i]),
+            "features_scaled": feats,
+        }
+
+    out = {
+        "created_at": datetime.now().isoformat(timespec="seconds"),
+        "threshold": float(thr),
+        "summary": {
+            "n_samples": int(len(y_true)),
+            "n_fp": int(fp_idx.size),
+            "n_fn": int(fn_idx.size),
+            "n_tp": int(((y_true == 1) & (y_pred == 1)).sum()),
+            "n_tn": int(((y_true == 0) & (y_pred == 0)).sum()),
+        },
+        "top_false_positives": [pack(i) for i in fp_sorted[:top_k]],
+        "top_false_negatives": [pack(i) for i in fn_sorted[:top_k]],
+        "metadata": meta,
+    }
+
+    ensure_dir(path.parent)
+    with open(path, "w", encoding="utf-8") as f:
+        json.dump(out, f, ensure_ascii=False, indent=2)
+
+
 def train_optimized(
     save_name="optimized_model.pt",
-    scaler_rel="scaler.pkl",
+    scaler_rel="config/scaler.pkl",
     alpha=0.55,
     gamma=2.0,
     batch_size=64,
@@ -211,6 +320,9 @@ def train_optimized(
     bad = 0
     min_delta = 1e-4
 
+    history_rows = []
+    run_id = datetime.now().strftime("run_%Y%m%d_%H%M%S")
+
     for ep in range(1, max_epochs + 1):
         model.train()
         train_losses = []
@@ -231,6 +343,19 @@ def train_optimized(
         lr_now = optimizer.param_groups[0]["lr"]
         print(f"ep={ep:03d} loss={tr_loss:.4f} val_loss={val_loss:.4f} val_auc={val_auc:.4f} lr={lr_now:.6f}")
         scheduler.step(val_auc)
+
+        history_rows.append({
+            "run_id": run_id,
+            "epoch": int(ep),
+            "train_loss": float(tr_loss),
+            "val_loss": float(val_loss),
+            "val_auc": float(val_auc),
+            "lr": float(lr_now),
+            "alpha": float(alpha),
+            "gamma": float(gamma),
+            "batch_size": int(batch_size),
+            "weight_decay": float(weight_decay),
+        })
 
         if val_auc > best_auc + min_delta:
             best_auc = val_auc
@@ -282,6 +407,95 @@ def train_optimized(
     print(f"Saved: {model_path}")
     print(f"Best AUC: {best_auc:.4f}  Best epoch: {best_epoch}")
     print(f"Auto threshold (val, max_fpr={max_fpr:.3f}): {thr_auto:.3f}  found={found}")
+
+    results_dir = root / "results"
+    ensure_dir(results_dir)
+
+    training_history_path = results_dir / "training_history.csv"
+    optimization_path = results_dir / "optimization_experiments.csv"
+    error_analysis_path = results_dir / "error_analysis.json"
+
+    write_csv(training_history_path, history_rows)
+
+    thr_metrics = metrics_at_threshold(y_val, p_val, thr_auto)
+
+    exp_fields = [
+        "run_id", "created_at", "model_name",
+        "epochs", "patience",
+        "batch_size", "lr", "weight_decay",
+        "alpha", "gamma", "max_fpr",
+        "best_epoch", "best_auc",
+        "pos_threshold", "threshold_found",
+        "val_accuracy", "val_precision", "val_recall", "val_f1", "val_fpr",
+        "tp", "tn", "fp", "fn",
+        "notes",
+    ]
+
+    exp_row = {
+        "run_id": run_id,
+        "created_at": datetime.now().isoformat(timespec="seconds"),
+        "model_name": "MLP",
+        "epochs": int(max_epochs),
+        "patience": int(patience),
+        "batch_size": int(batch_size),
+        "lr": float(lr),
+        "weight_decay": float(weight_decay),
+        "alpha": float(alpha),
+        "gamma": float(gamma),
+        "max_fpr": float(max_fpr),
+        "best_epoch": int(best_epoch),
+        "best_auc": float(best_auc),
+        "pos_threshold": float(thr_auto),
+        "threshold_found": int(found),
+        "val_accuracy": thr_metrics["val_accuracy"],
+        "val_precision": thr_metrics["val_precision"],
+        "val_recall": thr_metrics["val_recall"],
+        "val_f1": thr_metrics["val_f1"],
+        "val_fpr": thr_metrics["val_fpr"],
+        "tp": thr_metrics["tp"],
+        "tn": thr_metrics["tn"],
+        "fp": thr_metrics["fp"],
+        "fn": thr_metrics["fn"],
+        "notes": "",
+    }
+    append_csv(optimization_path, exp_row, fieldnames=exp_fields)
+
+    meta = {
+        "run_id": run_id,
+        "created_at": exp_row["created_at"],
+        "save_name": save_name,
+        "scaler_rel": scaler_rel,
+        "scaler_path_resolved": str(scaler_path),
+        "feature_count": int(len(feature_names)),
+        "best_auc": float(best_auc),
+        "best_epoch": int(best_epoch),
+        "threshold_auto": float(thr_auto),
+        "threshold_rule": "max_fpr",
+        "max_fpr": float(max_fpr),
+        "loss_name": "focal",
+        "alpha": float(alpha),
+        "gamma": float(gamma),
+        "batch_size": int(batch_size),
+        "lr": float(lr),
+        "weight_decay": float(weight_decay),
+        "sampler": "weighted_random",
+        "device": str(device),
+    }
+
+    write_error_analysis_json(
+        error_analysis_path,
+        feature_names=feature_names,
+        X_val_scaled=Xva,
+        y_true=y_val,
+        p_def=p_val,
+        thr=thr_auto,
+        meta=meta,
+        top_k=50
+    )
+
+    print(f"Wrote: {training_history_path}")
+    print(f"Appended: {optimization_path}")
+    print(f"Wrote: {error_analysis_path}")
 
 
 if __name__ == "__main__":

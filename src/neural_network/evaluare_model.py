@@ -7,8 +7,6 @@ import pandas as pd
 import torch
 from sklearn.metrics import accuracy_score, f1_score, precision_score, recall_score, roc_auc_score, confusion_matrix
 
-import matplotlib.pyplot as plt
-
 from model import MLP
 
 
@@ -17,6 +15,8 @@ def get_root() -> Path:
 
 
 def load_scaler(path: Path):
+    if not path.exists():
+        raise FileNotFoundError(f"Lipseste scaler: {path}")
     with open(path, "rb") as f:
         sc = pickle.load(f)
     feature_names = list(sc["feature_names"])
@@ -42,13 +42,11 @@ def read_y(path: Path):
         y = pd.to_numeric(df["defect"], errors="coerce").fillna(0).astype(int).values
     else:
         y = pd.to_numeric(df.iloc[:, 0], errors="coerce").fillna(0).astype(int).values
-    y = np.where(y >= 0.5, 1, 0).astype(int)
-    return y
+    return np.where(y >= 0.5, 1, 0).astype(int)
 
 
 def preprocess_X(x_path: Path, feature_names, mean, scale):
     Xdf = pd.read_csv(x_path)
-
     missing = [c for c in feature_names if c not in Xdf.columns]
     if missing:
         raise ValueError(f"Lipsesc coloane in {x_path}: {missing}")
@@ -87,7 +85,32 @@ def pick_threshold(meta: dict, fallback=0.5):
     return float(fallback), "default"
 
 
+def resolve_scaler_path(root: Path, args_scaler: str, meta: dict):
+    if args_scaler:
+        p = Path(args_scaler)
+        p = p if p.is_absolute() else (root / p)
+        p = p.resolve()
+        if p.exists():
+            return p, "cli"
+
+    sp = meta.get("scaler_path")
+    if sp:
+        p = Path(str(sp))
+        p = p if p.is_absolute() else (root / p)
+        p = p.resolve()
+        if p.exists():
+            return p, "checkpoint"
+
+    p = (root / "config" / "scaler.pkl").resolve()
+    return p, "default_config"
+
+
 def save_confusion_png(cm, out_path: Path, title: str):
+    try:
+        import matplotlib.pyplot as plt
+    except Exception:
+        return False
+
     plt.figure(figsize=(6.4, 5.2))
     plt.imshow(cm, interpolation="nearest")
     plt.title(title)
@@ -109,6 +132,7 @@ def save_confusion_png(cm, out_path: Path, title: str):
     out_path.parent.mkdir(parents=True, exist_ok=True)
     plt.savefig(out_path, dpi=180)
     plt.close()
+    return True
 
 
 def main():
@@ -116,29 +140,32 @@ def main():
     ap.add_argument("--model", default="models/optimized_model.pt")
     ap.add_argument("--x", default="data/test/X_test.csv")
     ap.add_argument("--y", default="data/test/y_test.csv")
-    ap.add_argument("--scaler", default="scaler.pkl")
+    ap.add_argument("--scaler", default="config/scaler.pkl")
     ap.add_argument("--threshold", type=float, default=None)
     ap.add_argument("--save_cm", action="store_true")
+    ap.add_argument("--out", default="results/final_metrics.json")
     args = ap.parse_args()
 
     root = get_root()
 
-    model_path = (root / args.model).resolve() if not Path(args.model).is_absolute() else Path(args.model)
-    x_path = (root / args.x).resolve() if not Path(args.x).is_absolute() else Path(args.x)
-    y_path = (root / args.y).resolve() if not Path(args.y).is_absolute() else Path(args.y)
-    scaler_path = (root / args.scaler).resolve() if not Path(args.scaler).is_absolute() else Path(args.scaler)
+    model_path = (root / args.model).resolve() if not Path(args.model).is_absolute() else Path(args.model).resolve()
+    x_path = (root / args.x).resolve() if not Path(args.x).is_absolute() else Path(args.x).resolve()
+    y_path = (root / args.y).resolve() if not Path(args.y).is_absolute() else Path(args.y).resolve()
 
+    state, meta = load_checkpoint(model_path)
+    scaler_path, scaler_src = resolve_scaler_path(root, args.scaler, meta)
     feature_names, mean, scale = load_scaler(scaler_path)
+
     X = preprocess_X(x_path, feature_names, mean, scale)
     y_true = read_y(y_path)
 
-    state, meta = load_checkpoint(model_path)
     input_dim = int(meta.get("input_dim", len(feature_names)))
     if input_dim != len(feature_names):
         input_dim = len(feature_names)
 
     model = MLP(input_dim)
     model.load_state_dict(state, strict=True)
+    model.eval()
 
     p = predict_proba(model, X)
 
@@ -157,15 +184,16 @@ def main():
     auc = float(roc_auc_score(y_true, p)) if len(np.unique(y_true)) > 1 else 0.5
     cm = confusion_matrix(y_true, y_pred, labels=[0, 1])
 
-    out_res = root / "results"
-    out_res.mkdir(parents=True, exist_ok=True)
-    out_json = out_res / "final_metrics.json"
+    out_json = (root / args.out).resolve() if not Path(args.out).is_absolute() else Path(args.out).resolve()
+    out_json.parent.mkdir(parents=True, exist_ok=True)
 
     payload = {
         "model_path": str(model_path),
         "x_path": str(x_path),
         "y_path": str(y_path),
-        "threshold_used": thr,
+        "scaler_path": str(scaler_path),
+        "scaler_source": scaler_src,
+        "threshold_used": float(thr),
         "threshold_source": thr_src,
         "accuracy": acc,
         "f1": f1,
@@ -177,16 +205,18 @@ def main():
     }
 
     with open(out_json, "w", encoding="utf-8") as f:
-        json.dump(payload, f, indent=2)
+        json.dump(payload, f, indent=2, ensure_ascii=False)
 
+    cm_saved = False
     if args.save_cm:
         out_cm = root / "docs" / "screenshots" / "confusion_matrix_optimized.png"
-        save_confusion_png(cm, out_cm, "Confusion Matrix - Optimized")
+        cm_saved = save_confusion_png(cm, out_cm, "Confusion Matrix - Optimized")
 
     print(f"acc={acc:.4f} f1={f1:.4f} auc={auc:.4f} thr={thr:.3f} ({thr_src})")
+    print(f"scaler={scaler_path} ({scaler_src})")
     print(f"Saved: {out_json}")
-    if args.save_cm:
-        print(f"Saved: {root / 'docs' / 'screenshots' / 'confusion_matrix_optimized.png'}")
+    if args.save_cm and not cm_saved:
+        print("matplotlib nu este instalat -> nu am generat PNG pentru confusion matrix.")
 
 
 if __name__ == "__main__":

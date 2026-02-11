@@ -1,0 +1,1350 @@
+{
+  "created_at": "2026-02-11T23:38:11",
+  "threshold": 0.3068593740463257,
+  "summary": {
+    "n_samples": 1800,
+    "n_fp": 179,
+    "n_fn": 23,
+    "n_tp": 397,
+    "n_tn": 1201
+  },
+  "top_false_positives": [
+    {
+      "index": 1169,
+      "y_true": 0,
+      "y_pred": 1,
+      "prob_defect": 0.9459179043769836,
+      "features_scaled": {
+        "km": 1.6151013374328613,
+        "vechime_ani": 0.21928925812244415,
+        "zile_de_la_ultima_revizie": 1.9578652381896973,
+        "coolant_temp": -0.6029070019721985,
+        "oil_temp": -0.8039775490760803,
+        "oil_pressure": -1.4788265228271484,
+        "maf": 0.21331879496574402,
+        "map_kpa": 0.19599996507167816,
+        "battery_v": -3.1313509941101074,
+        "vibratii_relanti": 1.3207569122314453
+      }
+    },
+    {
+      "index": 558,
+      "y_true": 0,
+      "y_pred": 1,
+      "prob_defect": 0.9281719923019409,
+      "features_scaled": {
+        "km": 1.1056149005889893,
+        "vechime_ani": 1.715765118598938,
+        "zile_de_la_ultima_revizie": 1.808046817779541,
+        "coolant_temp": 1.0946435928344727,
+        "oil_temp": 0.5904580354690552,
+        "oil_pressure": -2.2455849647521973,
+        "maf": -0.03109920583665371,
+        "map_kpa": 0.41378581523895264,
+        "battery_v": -1.6020820140838623,
+        "vibratii_relanti": 1.1507201194763184
+      }
+    },
+    {
+      "index": 986,
+      "y_true": 0,
+      "y_pred": 1,
+      "prob_defect": 0.9210116267204285,
+      "features_scaled": {
+        "km": 0.13511152565479279,
+        "vechime_ani": 1.6316087245941162,
+        "zile_de_la_ultima_revizie": 2.583836317062378,
+        "coolant_temp": -0.38751375675201416,
+        "oil_temp": 1.5340890884399414,
+        "oil_pressure": 1.4765093326568604,
+        "maf": -0.2675735652446747,
+        "map_kpa": -1.53622567653656,
+        "battery_v": -2.0647475719451904,
+        "vibratii_relanti": 2.8914945125579834
+      }
+    },
+    {
+      "index": 471,
+      "y_true": 0,
+      "y_pred": 1,
+      "prob_defect": 0.9165871143341064,
+      "features_scaled": {
+        "km": 0.187641903758049,
+        "vechime_ani": 0.6813008785247803,
+        "zile_de_la_ultima_revizie": 2.1913468837738037,
+        "coolant_temp": 2.1586756706237793,
+        "oil_temp": 0.5079137682914734,
+        "oil_pressure": -0.8773217797279358,
+        "maf": 0.23376742005348206,
+        "map_kpa": -0.8226538300514221,
+        "battery_v": 0.13482779264450073,
+        "vibratii_relanti": 2.6913886070251465
+      }
+    },
+    {
+      "index": 1250,
+      "y_true": 0,
+      "y_pred": 1,
+      "prob_defect": 0.9132694005966187,
+      "features_scaled": {
+        "km": 1.4947623014450073,
+        "vechime_ani": -0.5022923946380615,
+        "zile_de_la_ultima_revizie": 0.4903934597969055,
+        "coolant_temp": 2.3912720680236816,
+        "oil_temp": -0.27276158332824707,
+        "oil_pressure": -1.353947401046753,
+        "maf": -0.17218948900699615,
+        "map_kpa": 1.2591274976730347,
+        "battery_v": 0.5614253282546997,
+        "vibratii_relanti": 1.7894411087036133
+      }
+    },
+    {
+      "index": 1674,
+      "y_true": 0,
+      "y_pred": 1,
+      "prob_defect": 0.9019547700881958,
+      "features_scaled": {
+        "km": -0.5379524827003479,
+        "vechime_ani": -0.34838542342185974,
+        "zile_de_la_ultima_revizie": 2.0992841720581055,
+        "coolant_temp": 2.3721439838409424,
+        "oil_temp": 0.07587982714176178,
+        "oil_pressure": -0.34600186347961426,
+        "maf": -1.3796074390411377,
+        "map_kpa": 1.042289137840271,
+        "battery_v": 1.1169638633728027,
+        "vibratii_relanti": 1.924870491027832
+      }
+    },
+    {
+      "index": 628,
+      "y_true": 0,
+      "y_pred": 1,
+      "prob_defect": 0.8756701350212097,
+      "features_scaled": {
+        "km": 0.6627867221832275,
+        "vechime_ani": -0.965650200843811,
+        "zile_de_la_ultima_revizie": 0.7399474382400513,
+        "coolant_temp": 1.34685218334198,
+        "oil_temp": 2.615473508834839,
+        "oil_pressure": 0.34068000316619873,
+        "maf": -0.7295519709587097,
+        "map_kpa": 0.3538939356803894,
+        "battery_v": 0.6838258504867554,
+        "vibratii_relanti": 1.254869818687439
+      }
+    },
+    {
+      "index": 86,
+      "y_true": 0,
+      "y_pred": 1,
+      "prob_defect": 0.8510968685150146,
+      "features_scaled": {
+        "km": -1.0281634330749512,
+        "vechime_ani": 1.6897629499435425,
+        "zile_de_la_ultima_revizie": 0.17669899761676788,
+        "coolant_temp": 3.094350576400757,
+        "oil_temp": 1.1143372058868408,
+        "oil_pressure": -0.21708077192306519,
+        "maf": -1.7336344718933105,
+        "map_kpa": -0.16342292726039886,
+        "battery_v": 0.24736635386943817,
+        "vibratii_relanti": -0.7360459566116333
+      }
+    },
+    {
+      "index": 475,
+      "y_true": 0,
+      "y_pred": 1,
+      "prob_defect": 0.7978553175926208,
+      "features_scaled": {
+        "km": 1.4893760681152344,
+        "vechime_ani": -0.22633002698421478,
+        "zile_de_la_ultima_revizie": 1.7855114936828613,
+        "coolant_temp": 1.473864197731018,
+        "oil_temp": -1.5317630767822266,
+        "oil_pressure": -1.3713301420211792,
+        "maf": 0.4852037727832794,
+        "map_kpa": -0.0344371534883976,
+        "battery_v": 0.6344459652900696,
+        "vibratii_relanti": 0.8886153697967529
+      }
+    },
+    {
+      "index": 706,
+      "y_true": 0,
+      "y_pred": 1,
+      "prob_defect": 0.7332292795181274,
+      "features_scaled": {
+        "km": -0.5680883526802063,
+        "vechime_ani": 0.5252974629402161,
+        "zile_de_la_ultima_revizie": 0.6473885178565979,
+        "coolant_temp": -0.19763290882110596,
+        "oil_temp": -1.1315683126449585,
+        "oil_pressure": -0.5677302479743958,
+        "maf": 1.9386811256408691,
+        "map_kpa": 0.5637773871421814,
+        "battery_v": -2.00763201713562,
+        "vibratii_relanti": 1.7502331733703613
+      }
+    },
+    {
+      "index": 973,
+      "y_true": 0,
+      "y_pred": 1,
+      "prob_defect": 0.5080730319023132,
+      "features_scaled": {
+        "km": -0.30479535460472107,
+        "vechime_ani": -1.2207151651382446,
+        "zile_de_la_ultima_revizie": 0.5862244963645935,
+        "coolant_temp": -0.27938926219940186,
+        "oil_temp": 1.050179123878479,
+        "oil_pressure": -1.0633959770202637,
+        "maf": 0.7952925562858582,
+        "map_kpa": 0.5281875133514404,
+        "battery_v": -1.120728850364685,
+        "vibratii_relanti": -0.22129404544830322
+      }
+    },
+    {
+      "index": 127,
+      "y_true": 0,
+      "y_pred": 1,
+      "prob_defect": 0.45015019178390503,
+      "features_scaled": {
+        "km": 0.35979440808296204,
+        "vechime_ani": -1.0603193044662476,
+        "zile_de_la_ultima_revizie": 0.698910653591156,
+        "coolant_temp": -0.9910341501235962,
+        "oil_temp": 0.8904781341552734,
+        "oil_pressure": -1.0633959770202637,
+        "maf": -2.044694662094116,
+        "map_kpa": 1.6754640340805054,
+        "battery_v": 1.7329696416854858,
+        "vibratii_relanti": -0.03793330490589142
+      }
+    },
+    {
+      "index": 283,
+      "y_true": 0,
+      "y_pred": 1,
+      "prob_defect": 0.43569543957710266,
+      "features_scaled": {
+        "km": 0.07642747461795807,
+        "vechime_ani": 1.0211917161941528,
+        "zile_de_la_ultima_revizie": 0.19532696902751923,
+        "coolant_temp": 0.5655443668365479,
+        "oil_temp": 1.437021017074585,
+        "oil_pressure": 1.2843879461288452,
+        "maf": 1.274794101715088,
+        "map_kpa": -0.10280951857566833,
+        "battery_v": -1.4873679876327515,
+        "vibratii_relanti": -0.4004897475242615
+      }
+    },
+    {
+      "index": 1426,
+      "y_true": 0,
+      "y_pred": 1,
+      "prob_defect": 0.4213223159313202,
+      "features_scaled": {
+        "km": 1.025719404220581,
+        "vechime_ani": -0.660036027431488,
+        "zile_de_la_ultima_revizie": 0.7652774453163147,
+        "coolant_temp": -1.1313188076019287,
+        "oil_temp": 1.4257113933563232,
+        "oil_pressure": -0.43879640102386475,
+        "maf": 1.4207994937896729,
+        "map_kpa": 1.904760718345642,
+        "battery_v": -1.0029360055923462,
+        "vibratii_relanti": -0.7632111310958862
+      }
+    },
+    {
+      "index": 1194,
+      "y_true": 0,
+      "y_pred": 1,
+      "prob_defect": 0.4116014540195465,
+      "features_scaled": {
+        "km": -1.195076823234558,
+        "vechime_ani": -1.766442894935608,
+        "zile_de_la_ultima_revizie": -0.8027542233467102,
+        "coolant_temp": 0.7588112354278564,
+        "oil_temp": 0.6514838933944702,
+        "oil_pressure": 0.27903205156326294,
+        "maf": -1.2208036184310913,
+        "map_kpa": -0.5996986627578735,
+        "battery_v": -1.4488654136657715,
+        "vibratii_relanti": -0.1013476625084877
+      }
+    },
+    {
+      "index": 135,
+      "y_true": 0,
+      "y_pred": 1,
+      "prob_defect": 0.4033752977848053,
+      "features_scaled": {
+        "km": -1.3767846822738647,
+        "vechime_ani": 1.4848133325576782,
+        "zile_de_la_ultima_revizie": 0.8993297815322876,
+        "coolant_temp": 0.7588112354278564,
+        "oil_temp": 0.12670601904392242,
+        "oil_pressure": 0.22512418031692505,
+        "maf": 0.4192974269390106,
+        "map_kpa": -0.24659700691699982,
+        "battery_v": -1.248612403869629,
+        "vibratii_relanti": -0.38149282336235046
+      }
+    },
+    {
+      "index": 377,
+      "y_true": 0,
+      "y_pred": 1,
+      "prob_defect": 0.3984347879886627,
+      "features_scaled": {
+        "km": 0.9867334365844727,
+        "vechime_ani": -1.1066486835479736,
+        "zile_de_la_ultima_revizie": -0.000836400140542537,
+        "coolant_temp": -0.1684260368347168,
+        "oil_temp": -1.1838399171829224,
+        "oil_pressure": -0.2827685475349426,
+        "maf": -1.3524781465530396,
+        "map_kpa": -1.8984336853027344,
+        "battery_v": -1.6020820140838623,
+        "vibratii_relanti": 0.22019687294960022
+      }
+    },
+    {
+      "index": 1265,
+      "y_true": 0,
+      "y_pred": 1,
+      "prob_defect": 0.396502822637558,
+      "features_scaled": {
+        "km": 0.19113248586654663,
+        "vechime_ani": -1.4171745777130127,
+        "zile_de_la_ultima_revizie": -0.5669310688972473,
+        "coolant_temp": -1.4348738193511963,
+        "oil_temp": -1.6882303953170776,
+        "oil_pressure": -1.0633959770202637,
+        "maf": 0.5923916697502136,
+        "map_kpa": -1.3407520055770874,
+        "battery_v": -0.10702986270189285,
+        "vibratii_relanti": -0.11636658012866974
+      }
+    },
+    {
+      "index": 1477,
+      "y_true": 0,
+      "y_pred": 1,
+      "prob_defect": 0.3948315680027008,
+      "features_scaled": {
+        "km": -0.9067205786705017,
+        "vechime_ani": -1.6003421545028687,
+        "zile_de_la_ultima_revizie": 0.38447582721710205,
+        "coolant_temp": -0.06992817670106888,
+        "oil_temp": 1.437021017074585,
+        "oil_pressure": -0.2277054488658905,
+        "maf": 0.36733946204185486,
+        "map_kpa": -0.2778737246990204,
+        "battery_v": -0.3680395781993866,
+        "vibratii_relanti": -0.47686609625816345
+      }
+    },
+    {
+      "index": 1485,
+      "y_true": 0,
+      "y_pred": 1,
+      "prob_defect": 0.39193275570869446,
+      "features_scaled": {
+        "km": -1.4546568393707275,
+        "vechime_ani": -0.26948878169059753,
+        "zile_de_la_ultima_revizie": -1.5724188089370728,
+        "coolant_temp": 0.7431273460388184,
+        "oil_temp": 1.437021017074585,
+        "oil_pressure": 0.5715018510818481,
+        "maf": -0.31574204564094543,
+        "map_kpa": -1.468483805656433,
+        "battery_v": -1.0036596059799194,
+        "vibratii_relanti": -0.9333271384239197
+      }
+    },
+    {
+      "index": 1630,
+      "y_true": 0,
+      "y_pred": 1,
+      "prob_defect": 0.39063358306884766,
+      "features_scaled": {
+        "km": -0.99423748254776,
+        "vechime_ani": 1.2230339050292969,
+        "zile_de_la_ultima_revizie": -1.0462701320648193,
+        "coolant_temp": -2.271249771118164,
+        "oil_temp": 1.0519509315490723,
+        "oil_pressure": -1.0633959770202637,
+        "maf": 1.1806790828704834,
+        "map_kpa": 0.7728015184402466,
+        "battery_v": 0.35986757278442383,
+        "vibratii_relanti": 0.025936204940080643
+      }
+    },
+    {
+      "index": 1661,
+      "y_true": 0,
+      "y_pred": 1,
+      "prob_defect": 0.3854484260082245,
+      "features_scaled": {
+        "km": 0.6328039765357971,
+        "vechime_ani": -0.4561282992362976,
+        "zile_de_la_ultima_revizie": 0.13961131870746613,
+        "coolant_temp": -0.948095440864563,
+        "oil_temp": -1.3624286651611328,
+        "oil_pressure": -0.6396623849868774,
+        "maf": 1.2954221963882446,
+        "map_kpa": -0.9952239394187927,
+        "battery_v": -0.3167269825935364,
+        "vibratii_relanti": 0.2262234389781952
+      }
+    },
+    {
+      "index": 994,
+      "y_true": 0,
+      "y_pred": 1,
+      "prob_defect": 0.38378870487213135,
+      "features_scaled": {
+        "km": -1.610084891319275,
+        "vechime_ani": -1.0805790424346924,
+        "zile_de_la_ultima_revizie": 0.21916644275188446,
+        "coolant_temp": 0.7588112354278564,
+        "oil_temp": 1.2639280557632446,
+        "oil_pressure": 1.9084097146987915,
+        "maf": 0.3053525686264038,
+        "map_kpa": 0.21285854279994965,
+        "battery_v": 0.36380067467689514,
+        "vibratii_relanti": -0.3683135509490967
+      }
+    },
+    {
+      "index": 1734,
+      "y_true": 0,
+      "y_pred": 1,
+      "prob_defect": 0.3828756511211395,
+      "features_scaled": {
+        "km": -1.4522196054458618,
+        "vechime_ani": -0.8166430592536926,
+        "zile_de_la_ultima_revizie": -0.3168039917945862,
+        "coolant_temp": 0.7588112354278564,
+        "oil_temp": 0.5498961806297302,
+        "oil_pressure": 0.1729038506746292,
+        "maf": 0.5607330203056335,
+        "map_kpa": -0.9244024157524109,
+        "battery_v": -1.0750930309295654,
+        "vibratii_relanti": -0.38776710629463196
+      }
+    },
+    {
+      "index": 758,
+      "y_true": 0,
+      "y_pred": 1,
+      "prob_defect": 0.3828139901161194,
+      "features_scaled": {
+        "km": -1.1631889343261719,
+        "vechime_ani": -1.1852587461471558,
+        "zile_de_la_ultima_revizie": -1.2412359714508057,
+        "coolant_temp": -0.7054800391197205,
+        "oil_temp": 0.9139856100082397,
+        "oil_pressure": -0.6346828937530518,
+        "maf": 4.006918907165527,
+        "map_kpa": -1.0711265802383423,
+        "battery_v": 2.5588057041168213,
+        "vibratii_relanti": -0.059549055993556976
+      }
+    },
+    {
+      "index": 173,
+      "y_true": 0,
+      "y_pred": 1,
+      "prob_defect": 0.38256266713142395,
+      "features_scaled": {
+        "km": -1.1244359016418457,
+        "vechime_ani": -1.0480647087097168,
+        "zile_de_la_ultima_revizie": -0.17243437469005585,
+        "coolant_temp": 0.7588112354278564,
+        "oil_temp": 0.2550439238548279,
+        "oil_pressure": 1.438719391822815,
+        "maf": 0.8637010455131531,
+        "map_kpa": 0.4433984160423279,
+        "battery_v": -1.6020820140838623,
+        "vibratii_relanti": -0.7133073210716248
+      }
+    },
+    {
+      "index": 1205,
+      "y_true": 0,
+      "y_pred": 1,
+      "prob_defect": 0.3815353214740753,
+      "features_scaled": {
+        "km": 0.09956181794404984,
+        "vechime_ani": -1.733536958694458,
+        "zile_de_la_ultima_revizie": 0.3861366808414459,
+        "coolant_temp": 0.07415761798620224,
+        "oil_temp": -0.9870573878288269,
+        "oil_pressure": -0.2506692707538605,
+        "maf": 0.02559114433825016,
+        "map_kpa": -1.88603937625885,
+        "battery_v": -1.6020820140838623,
+        "vibratii_relanti": -0.40086349844932556
+      }
+    },
+    {
+      "index": 693,
+      "y_true": 0,
+      "y_pred": 1,
+      "prob_defect": 0.379986047744751,
+      "features_scaled": {
+        "km": -1.1717690229415894,
+        "vechime_ani": 0.35308244824409485,
+        "zile_de_la_ultima_revizie": 0.8556422591209412,
+        "coolant_temp": -0.5036582350730896,
+        "oil_temp": 0.6161801815032959,
+        "oil_pressure": 0.6505557894706726,
+        "maf": -0.4796176850795746,
+        "map_kpa": -0.15991656482219696,
+        "battery_v": -1.4541966915130615,
+        "vibratii_relanti": 0.2773078382015228
+      }
+    },
+    {
+      "index": 1765,
+      "y_true": 0,
+      "y_pred": 1,
+      "prob_defect": 0.37962496280670166,
+      "features_scaled": {
+        "km": -1.3305150270462036,
+        "vechime_ani": 0.5289870500564575,
+        "zile_de_la_ultima_revizie": -0.9562644958496094,
+        "coolant_temp": 0.7588112354278564,
+        "oil_temp": 1.2922898530960083,
+        "oil_pressure": 0.10039433091878891,
+        "maf": 0.9990658760070801,
+        "map_kpa": -1.5730719566345215,
+        "battery_v": 1.259748935699463,
+        "vibratii_relanti": -0.07844232767820358
+      }
+    },
+    {
+      "index": 194,
+      "y_true": 0,
+      "y_pred": 1,
+      "prob_defect": 0.3783053755760193,
+      "features_scaled": {
+        "km": -0.6695845127105713,
+        "vechime_ani": -1.0963033437728882,
+        "zile_de_la_ultima_revizie": -0.6079424619674683,
+        "coolant_temp": -0.08262884616851807,
+        "oil_temp": 0.04982525482773781,
+        "oil_pressure": -0.46733060479164124,
+        "maf": 0.03382551297545433,
+        "map_kpa": -2.137916326522827,
+        "battery_v": 2.3278439044952393,
+        "vibratii_relanti": -0.07797909528017044
+      }
+    },
+    {
+      "index": 1510,
+      "y_true": 0,
+      "y_pred": 1,
+      "prob_defect": 0.3724417984485626,
+      "features_scaled": {
+        "km": -0.07717543840408325,
+        "vechime_ani": -1.3932424783706665,
+        "zile_de_la_ultima_revizie": -1.2193310260772705,
+        "coolant_temp": -1.2347697019577026,
+        "oil_temp": -1.789698600769043,
+        "oil_pressure": 0.24644921720027924,
+        "maf": 0.7704504132270813,
+        "map_kpa": -1.5769109725952148,
+        "battery_v": 2.020778179168701,
+        "vibratii_relanti": -0.11481784284114838
+      }
+    },
+    {
+      "index": 1091,
+      "y_true": 0,
+      "y_pred": 1,
+      "prob_defect": 0.36975961923599243,
+      "features_scaled": {
+        "km": -1.4474658966064453,
+        "vechime_ani": -1.3295682668685913,
+        "zile_de_la_ultima_revizie": 0.7089956998825073,
+        "coolant_temp": 0.7588112354278564,
+        "oil_temp": -0.3612107038497925,
+        "oil_pressure": 1.6165614128112793,
+        "maf": 0.6431984901428223,
+        "map_kpa": 0.2598860561847687,
+        "battery_v": -0.8959458470344543,
+        "vibratii_relanti": -0.5131071209907532
+      }
+    },
+    {
+      "index": 1772,
+      "y_true": 0,
+      "y_pred": 1,
+      "prob_defect": 0.36903753876686096,
+      "features_scaled": {
+        "km": 0.6674880385398865,
+        "vechime_ani": 1.5073843002319336,
+        "zile_de_la_ultima_revizie": 0.5740379095077515,
+        "coolant_temp": 0.6438785791397095,
+        "oil_temp": 0.9073956608772278,
+        "oil_pressure": -0.08765476942062378,
+        "maf": -0.22357392311096191,
+        "map_kpa": -1.7929611206054688,
+        "battery_v": 0.7640288472175598,
+        "vibratii_relanti": -0.37634849548339844
+      }
+    },
+    {
+      "index": 1044,
+      "y_true": 0,
+      "y_pred": 1,
+      "prob_defect": 0.36565977334976196,
+      "features_scaled": {
+        "km": 0.4941883683204651,
+        "vechime_ani": -0.4397970139980316,
+        "zile_de_la_ultima_revizie": -0.31548982858657837,
+        "coolant_temp": -1.2811163663864136,
+        "oil_temp": 1.437021017074585,
+        "oil_pressure": -0.8661972880363464,
+        "maf": -2.1067123413085938,
+        "map_kpa": 0.866328775882721,
+        "battery_v": -0.24805261194705963,
+        "vibratii_relanti": -0.2543535530567169
+      }
+    },
+    {
+      "index": 1463,
+      "y_true": 0,
+      "y_pred": 1,
+      "prob_defect": 0.36480844020843506,
+      "features_scaled": {
+        "km": -1.7581815719604492,
+        "vechime_ani": -1.018282175064087,
+        "zile_de_la_ultima_revizie": 0.2595779001712799,
+        "coolant_temp": -0.3137218654155731,
+        "oil_temp": 1.0522900819778442,
+        "oil_pressure": -0.123919278383255,
+        "maf": 0.8029202222824097,
+        "map_kpa": -0.5761778354644775,
+        "battery_v": 1.6695122718811035,
+        "vibratii_relanti": -0.05171532928943634
+      }
+    },
+    {
+      "index": 437,
+      "y_true": 0,
+      "y_pred": 1,
+      "prob_defect": 0.3646397292613983,
+      "features_scaled": {
+        "km": 0.9972975850105286,
+        "vechime_ani": -0.7705739736557007,
+        "zile_de_la_ultima_revizie": 0.6958299875259399,
+        "coolant_temp": -0.37214356660842896,
+        "oil_temp": 1.437021017074585,
+        "oil_pressure": -0.19524385035037994,
+        "maf": -0.1776949167251587,
+        "map_kpa": -0.8754040002822876,
+        "battery_v": 0.31304827332496643,
+        "vibratii_relanti": -0.22076024115085602
+      }
+    },
+    {
+      "index": 323,
+      "y_true": 0,
+      "y_pred": 1,
+      "prob_defect": 0.3635983169078827,
+      "features_scaled": {
+        "km": -1.5707178115844727,
+        "vechime_ani": -1.6117650270462036,
+        "zile_de_la_ultima_revizie": 0.24138008058071136,
+        "coolant_temp": 0.36414119601249695,
+        "oil_temp": 0.5785377025604248,
+        "oil_pressure": -0.28911092877388,
+        "maf": 0.7094025611877441,
+        "map_kpa": -1.002584457397461,
+        "battery_v": 0.1602821946144104,
+        "vibratii_relanti": -0.1382007747888565
+      }
+    },
+    {
+      "index": 1614,
+      "y_true": 0,
+      "y_pred": 1,
+      "prob_defect": 0.3624422252178192,
+      "features_scaled": {
+        "km": 0.4784628748893738,
+        "vechime_ani": -0.49024462699890137,
+        "zile_de_la_ultima_revizie": -1.1169986724853516,
+        "coolant_temp": -1.524706482887268,
+        "oil_temp": -1.532766342163086,
+        "oil_pressure": -0.9564314484596252,
+        "maf": 0.7629148364067078,
+        "map_kpa": -0.5066196918487549,
+        "battery_v": 0.27921411395072937,
+        "vibratii_relanti": -0.1889977902173996
+      }
+    },
+    {
+      "index": 1592,
+      "y_true": 0,
+      "y_pred": 1,
+      "prob_defect": 0.36231040954589844,
+      "features_scaled": {
+        "km": 0.8320900797843933,
+        "vechime_ani": -1.6235027313232422,
+        "zile_de_la_ultima_revizie": -1.188820481300354,
+        "coolant_temp": -0.5949090123176575,
+        "oil_temp": -0.5127620697021484,
+        "oil_pressure": -0.48287439346313477,
+        "maf": -0.5209429860115051,
+        "map_kpa": -1.9737948179244995,
+        "battery_v": 1.9219367504119873,
+        "vibratii_relanti": -0.026648573577404022
+      }
+    },
+    {
+      "index": 293,
+      "y_true": 0,
+      "y_pred": 1,
+      "prob_defect": 0.361215740442276,
+      "features_scaled": {
+        "km": -1.4872126579284668,
+        "vechime_ani": -0.9205511808395386,
+        "zile_de_la_ultima_revizie": 0.7206847667694092,
+        "coolant_temp": 0.7588112354278564,
+        "oil_temp": 0.31484025716781616,
+        "oil_pressure": 0.01591075398027897,
+        "maf": 0.9276321530342102,
+        "map_kpa": -0.06086418777704239,
+        "battery_v": -0.25960686802864075,
+        "vibratii_relanti": -0.5395494699478149
+      }
+    },
+    {
+      "index": 613,
+      "y_true": 0,
+      "y_pred": 1,
+      "prob_defect": 0.3571733832359314,
+      "features_scaled": {
+        "km": 1.0570777654647827,
+        "vechime_ani": -1.151926875114441,
+        "zile_de_la_ultima_revizie": -0.7056940793991089,
+        "coolant_temp": 0.30729177594184875,
+        "oil_temp": -0.10953734815120697,
+        "oil_pressure": -0.601349413394928,
+        "maf": 1.010506272315979,
+        "map_kpa": -1.7674481868743896,
+        "battery_v": -0.969879150390625,
+        "vibratii_relanti": -0.15382736921310425
+      }
+    },
+    {
+      "index": 1606,
+      "y_true": 0,
+      "y_pred": 1,
+      "prob_defect": 0.3563810884952545,
+      "features_scaled": {
+        "km": -0.9149543642997742,
+        "vechime_ani": -1.743341088294983,
+        "zile_de_la_ultima_revizie": 0.2866305410861969,
+        "coolant_temp": 0.21893613040447235,
+        "oil_temp": -0.27418291568756104,
+        "oil_pressure": 1.483694314956665,
+        "maf": -0.5646856427192688,
+        "map_kpa": -0.46792271733283997,
+        "battery_v": -1.6020820140838623,
+        "vibratii_relanti": -0.19553601741790771
+      }
+    },
+    {
+      "index": 302,
+      "y_true": 0,
+      "y_pred": 1,
+      "prob_defect": 0.35494735836982727,
+      "features_scaled": {
+        "km": 0.9095946550369263,
+        "vechime_ani": 1.3020581007003784,
+        "zile_de_la_ultima_revizie": 0.6968775987625122,
+        "coolant_temp": 0.7588112354278564,
+        "oil_temp": 0.07938876003026962,
+        "oil_pressure": -0.134062722325325,
+        "maf": 0.5378749370574951,
+        "map_kpa": 1.008561372756958,
+        "battery_v": 0.6412501335144043,
+        "vibratii_relanti": -0.09827974438667297
+      }
+    },
+    {
+      "index": 1444,
+      "y_true": 0,
+      "y_pred": 1,
+      "prob_defect": 0.35341960191726685,
+      "features_scaled": {
+        "km": -1.0341606140136719,
+        "vechime_ani": -1.6799232959747314,
+        "zile_de_la_ultima_revizie": 0.7615375518798828,
+        "coolant_temp": -0.14357727766036987,
+        "oil_temp": -0.00011881956015713513,
+        "oil_pressure": -0.7707329988479614,
+        "maf": -0.6472839713096619,
+        "map_kpa": -1.1181285381317139,
+        "battery_v": -0.7227416038513184,
+        "vibratii_relanti": -0.2072022706270218
+      }
+    },
+    {
+      "index": 1046,
+      "y_true": 0,
+      "y_pred": 1,
+      "prob_defect": 0.35303860902786255,
+      "features_scaled": {
+        "km": -1.130053997039795,
+        "vechime_ani": 0.17838773131370544,
+        "zile_de_la_ultima_revizie": -1.3715457916259766,
+        "coolant_temp": 0.744251012802124,
+        "oil_temp": 0.9023638963699341,
+        "oil_pressure": -0.779012143611908,
+        "maf": 1.0943490266799927,
+        "map_kpa": -0.7413337826728821,
+        "battery_v": -0.8422266840934753,
+        "vibratii_relanti": -0.48258134722709656
+      }
+    },
+    {
+      "index": 782,
+      "y_true": 0,
+      "y_pred": 1,
+      "prob_defect": 0.3522976040840149,
+      "features_scaled": {
+        "km": -0.8634049892425537,
+        "vechime_ani": 1.3091648817062378,
+        "zile_de_la_ultima_revizie": 0.5057219862937927,
+        "coolant_temp": -1.5438064336776733,
+        "oil_temp": -1.194588541984558,
+        "oil_pressure": -1.0633959770202637,
+        "maf": -0.9264671802520752,
+        "map_kpa": 1.5423649549484253,
+        "battery_v": 1.1496238708496094,
+        "vibratii_relanti": 0.17041867971420288
+      }
+    },
+    {
+      "index": 1347,
+      "y_true": 0,
+      "y_pred": 1,
+      "prob_defect": 0.351163774728775,
+      "features_scaled": {
+        "km": -1.2293392419815063,
+        "vechime_ani": -0.8642063736915588,
+        "zile_de_la_ultima_revizie": 0.3652917742729187,
+        "coolant_temp": 0.7588112354278564,
+        "oil_temp": 0.480404794216156,
+        "oil_pressure": -0.35999608039855957,
+        "maf": 1.989776611328125,
+        "map_kpa": -0.44672590494155884,
+        "battery_v": 0.13645705580711365,
+        "vibratii_relanti": -0.11481253057718277
+      }
+    },
+    {
+      "index": 1004,
+      "y_true": 0,
+      "y_pred": 1,
+      "prob_defect": 0.3508443534374237,
+      "features_scaled": {
+        "km": -0.07646425813436508,
+        "vechime_ani": -0.9816182851791382,
+        "zile_de_la_ultima_revizie": 0.7539528012275696,
+        "coolant_temp": 0.7588112354278564,
+        "oil_temp": -0.24377411603927612,
+        "oil_pressure": -1.035229206085205,
+        "maf": -1.5512605905532837,
+        "map_kpa": 0.753167986869812,
+        "battery_v": 0.2222200632095337,
+        "vibratii_relanti": 0.05039334297180176
+      }
+    },
+    {
+      "index": 1249,
+      "y_true": 0,
+      "y_pred": 1,
+      "prob_defect": 0.3507973849773407,
+      "features_scaled": {
+        "km": -1.7412000894546509,
+        "vechime_ani": -0.16293002665042877,
+        "zile_de_la_ultima_revizie": -1.5352544784545898,
+        "coolant_temp": -0.36919113993644714,
+        "oil_temp": -1.303517460823059,
+        "oil_pressure": 0.7253618240356445,
+        "maf": -0.7437798976898193,
+        "map_kpa": -1.565757155418396,
+        "battery_v": -0.7056459188461304,
+        "vibratii_relanti": -0.30944541096687317
+      }
+    },
+    {
+      "index": 1722,
+      "y_true": 0,
+      "y_pred": 1,
+      "prob_defect": 0.3480575680732727,
+      "features_scaled": {
+        "km": 0.16412432491779327,
+        "vechime_ani": 0.36465027928352356,
+        "zile_de_la_ultima_revizie": -1.57498037815094,
+        "coolant_temp": 0.7588112354278564,
+        "oil_temp": -1.8748170137405396,
+        "oil_pressure": -0.35276973247528076,
+        "maf": 0.5150520205497742,
+        "map_kpa": -0.9609941840171814,
+        "battery_v": -0.7118082046508789,
+        "vibratii_relanti": -0.13303422927856445
+      }
+    }
+  ],
+  "top_false_negatives": [
+    {
+      "index": 1633,
+      "y_true": 1,
+      "y_pred": 0,
+      "prob_defect": 0.20954447984695435,
+      "features_scaled": {
+        "km": -0.18440942466259003,
+        "vechime_ani": 0.6294183731079102,
+        "zile_de_la_ultima_revizie": 0.16781269013881683,
+        "coolant_temp": -1.1005334854125977,
+        "oil_temp": -0.0994579866528511,
+        "oil_pressure": 0.17191492021083832,
+        "maf": 1.1547086238861084,
+        "map_kpa": 1.6769587993621826,
+        "battery_v": -0.038742974400520325,
+        "vibratii_relanti": -0.23241600394248962
+      }
+    },
+    {
+      "index": 1041,
+      "y_true": 1,
+      "y_pred": 0,
+      "prob_defect": 0.2234971821308136,
+      "features_scaled": {
+        "km": 0.48886170983314514,
+        "vechime_ani": -1.7862513065338135,
+        "zile_de_la_ultima_revizie": 0.6128687858581543,
+        "coolant_temp": 0.28090423345565796,
+        "oil_temp": 0.34470006823539734,
+        "oil_pressure": 0.9092331528663635,
+        "maf": 0.6861780881881714,
+        "map_kpa": 2.13423228263855,
+        "battery_v": 0.32260212302207947,
+        "vibratii_relanti": -0.3122761845588684
+      }
+    },
+    {
+      "index": 1793,
+      "y_true": 1,
+      "y_pred": 0,
+      "prob_defect": 0.2348673790693283,
+      "features_scaled": {
+        "km": 0.24429988861083984,
+        "vechime_ani": -0.9055498838424683,
+        "zile_de_la_ultima_revizie": 0.40603500604629517,
+        "coolant_temp": -0.3502480983734131,
+        "oil_temp": 0.5694938898086548,
+        "oil_pressure": 0.113448366522789,
+        "maf": 0.1514284312725067,
+        "map_kpa": 0.1687505692243576,
+        "battery_v": 0.18096783757209778,
+        "vibratii_relanti": -0.36355695128440857
+      }
+    },
+    {
+      "index": 1384,
+      "y_true": 1,
+      "y_pred": 0,
+      "prob_defect": 0.23970815539360046,
+      "features_scaled": {
+        "km": 0.4345850944519043,
+        "vechime_ani": 1.555881142616272,
+        "zile_de_la_ultima_revizie": -0.8600066304206848,
+        "coolant_temp": -0.8406354784965515,
+        "oil_temp": -1.5916564464569092,
+        "oil_pressure": 0.5914528369903564,
+        "maf": 1.404581904411316,
+        "map_kpa": -1.2112364768981934,
+        "battery_v": -1.4779565334320068,
+        "vibratii_relanti": -0.5439062118530273
+      }
+    },
+    {
+      "index": 969,
+      "y_true": 1,
+      "y_pred": 0,
+      "prob_defect": 0.24482499063014984,
+      "features_scaled": {
+        "km": 0.011637485586106777,
+        "vechime_ani": -0.7043943405151367,
+        "zile_de_la_ultima_revizie": -1.3314017057418823,
+        "coolant_temp": -0.3806077539920807,
+        "oil_temp": -0.13603711128234863,
+        "oil_pressure": 0.7787596583366394,
+        "maf": 0.21013835072517395,
+        "map_kpa": 0.02229810692369938,
+        "battery_v": -0.8244004249572754,
+        "vibratii_relanti": -0.10741225630044937
+      }
+    },
+    {
+      "index": 541,
+      "y_true": 1,
+      "y_pred": 0,
+      "prob_defect": 0.24621129035949707,
+      "features_scaled": {
+        "km": 0.80022794008255,
+        "vechime_ani": -0.457620769739151,
+        "zile_de_la_ultima_revizie": -0.501729428768158,
+        "coolant_temp": -1.2161526679992676,
+        "oil_temp": 0.26821184158325195,
+        "oil_pressure": 0.9369897842407227,
+        "maf": 0.548507034778595,
+        "map_kpa": -0.1445474475622177,
+        "battery_v": 0.5657902956008911,
+        "vibratii_relanti": -0.0012868121266365051
+      }
+    },
+    {
+      "index": 189,
+      "y_true": 1,
+      "y_pred": 0,
+      "prob_defect": 0.26124200224876404,
+      "features_scaled": {
+        "km": 0.003131199162453413,
+        "vechime_ani": 0.6005237698554993,
+        "zile_de_la_ultima_revizie": -0.6978175640106201,
+        "coolant_temp": -0.30087050795555115,
+        "oil_temp": -0.651668131351471,
+        "oil_pressure": 0.30975639820098877,
+        "maf": 1.3968473672866821,
+        "map_kpa": 0.34318116307258606,
+        "battery_v": 1.9652314186096191,
+        "vibratii_relanti": -0.30629608035087585
+      }
+    },
+    {
+      "index": 1052,
+      "y_true": 1,
+      "y_pred": 0,
+      "prob_defect": 0.27389824390411377,
+      "features_scaled": {
+        "km": -0.8816260695457458,
+        "vechime_ani": -1.2287557125091553,
+        "zile_de_la_ultima_revizie": -0.15711571276187897,
+        "coolant_temp": -0.7597842216491699,
+        "oil_temp": -0.21203050017356873,
+        "oil_pressure": -0.027940087020397186,
+        "maf": 1.678247094154358,
+        "map_kpa": -0.004801732487976551,
+        "battery_v": -0.8844989538192749,
+        "vibratii_relanti": 0.22062133252620697
+      }
+    },
+    {
+      "index": 915,
+      "y_true": 1,
+      "y_pred": 0,
+      "prob_defect": 0.2759741246700287,
+      "features_scaled": {
+        "km": 0.14469802379608154,
+        "vechime_ani": 1.6129966974258423,
+        "zile_de_la_ultima_revizie": 0.134632408618927,
+        "coolant_temp": -0.4991714656352997,
+        "oil_temp": 1.2224186658859253,
+        "oil_pressure": -0.11731631308794022,
+        "maf": -0.4195755422115326,
+        "map_kpa": -0.4850134253501892,
+        "battery_v": 0.990877628326416,
+        "vibratii_relanti": -0.38809841871261597
+      }
+    },
+    {
+      "index": 288,
+      "y_true": 1,
+      "y_pred": 0,
+      "prob_defect": 0.2790195345878601,
+      "features_scaled": {
+        "km": -1.4358117580413818,
+        "vechime_ani": 0.2744177281856537,
+        "zile_de_la_ultima_revizie": -1.2166539430618286,
+        "coolant_temp": -0.09950168430805206,
+        "oil_temp": 0.8565875291824341,
+        "oil_pressure": -0.3564370274543762,
+        "maf": -0.8045443296432495,
+        "map_kpa": -1.2997541427612305,
+        "battery_v": -0.10734730958938599,
+        "vibratii_relanti": -0.6112842559814453
+      }
+    },
+    {
+      "index": 1740,
+      "y_true": 1,
+      "y_pred": 0,
+      "prob_defect": 0.27932241559028625,
+      "features_scaled": {
+        "km": 0.7382796406745911,
+        "vechime_ani": -1.4494664669036865,
+        "zile_de_la_ultima_revizie": 0.19262610375881195,
+        "coolant_temp": 0.7588112354278564,
+        "oil_temp": -0.15983638167381287,
+        "oil_pressure": 0.33485695719718933,
+        "maf": 1.327294111251831,
+        "map_kpa": 0.07452769577503204,
+        "battery_v": -0.10620355606079102,
+        "vibratii_relanti": -0.3360684812068939
+      }
+    },
+    {
+      "index": 1318,
+      "y_true": 1,
+      "y_pred": 0,
+      "prob_defect": 0.2817918062210083,
+      "features_scaled": {
+        "km": -0.019296158105134964,
+        "vechime_ani": -1.6003302335739136,
+        "zile_de_la_ultima_revizie": -0.3223087191581726,
+        "coolant_temp": 0.21824517846107483,
+        "oil_temp": 0.3786523640155792,
+        "oil_pressure": 0.33515191078186035,
+        "maf": 2.4363112449645996,
+        "map_kpa": -0.5649319291114807,
+        "battery_v": 0.5626881122589111,
+        "vibratii_relanti": 0.20464974641799927
+      }
+    },
+    {
+      "index": 1507,
+      "y_true": 1,
+      "y_pred": 0,
+      "prob_defect": 0.28313279151916504,
+      "features_scaled": {
+        "km": 1.0013636350631714,
+        "vechime_ani": -0.16705043613910675,
+        "zile_de_la_ultima_revizie": 0.20919077098369598,
+        "coolant_temp": 0.007499134633690119,
+        "oil_temp": 1.185541033744812,
+        "oil_pressure": 0.11305632442235947,
+        "maf": 2.358354091644287,
+        "map_kpa": 0.06449459493160248,
+        "battery_v": 1.0929145812988281,
+        "vibratii_relanti": -0.3590501546859741
+      }
+    },
+    {
+      "index": 241,
+      "y_true": 1,
+      "y_pred": 0,
+      "prob_defect": 0.28555604815483093,
+      "features_scaled": {
+        "km": 0.974889874458313,
+        "vechime_ani": -0.4573518931865692,
+        "zile_de_la_ultima_revizie": 0.7727943658828735,
+        "coolant_temp": -1.8719749450683594,
+        "oil_temp": -1.3282711505889893,
+        "oil_pressure": 0.7494205236434937,
+        "maf": 0.0321928970515728,
+        "map_kpa": -0.028594626113772392,
+        "battery_v": -0.020601607859134674,
+        "vibratii_relanti": -0.9333271384239197
+      }
+    },
+    {
+      "index": 905,
+      "y_true": 1,
+      "y_pred": 0,
+      "prob_defect": 0.2876572906970978,
+      "features_scaled": {
+        "km": 0.29972410202026367,
+        "vechime_ani": 0.8779324293136597,
+        "zile_de_la_ultima_revizie": -1.5822101831436157,
+        "coolant_temp": -0.5041359066963196,
+        "oil_temp": -1.2416366338729858,
+        "oil_pressure": 0.32102859020233154,
+        "maf": -0.8018062710762024,
+        "map_kpa": -0.5308151841163635,
+        "battery_v": 0.505294919013977,
+        "vibratii_relanti": -0.8184656500816345
+      }
+    },
+    {
+      "index": 733,
+      "y_true": 1,
+      "y_pred": 0,
+      "prob_defect": 0.2914806306362152,
+      "features_scaled": {
+        "km": -0.7603400349617004,
+        "vechime_ani": -1.1422934532165527,
+        "zile_de_la_ultima_revizie": 0.812652051448822,
+        "coolant_temp": 0.3443591296672821,
+        "oil_temp": -0.8102102875709534,
+        "oil_pressure": 1.0160558223724365,
+        "maf": -0.03049222007393837,
+        "map_kpa": -0.6701331734657288,
+        "battery_v": 0.43162772059440613,
+        "vibratii_relanti": -0.5636935830116272
+      }
+    },
+    {
+      "index": 796,
+      "y_true": 1,
+      "y_pred": 0,
+      "prob_defect": 0.2969713807106018,
+      "features_scaled": {
+        "km": -0.427996963262558,
+        "vechime_ani": -0.7601080536842346,
+        "zile_de_la_ultima_revizie": -0.43282821774482727,
+        "coolant_temp": -0.45882558822631836,
+        "oil_temp": 0.1740473508834839,
+        "oil_pressure": 0.5162687301635742,
+        "maf": -0.05266910046339035,
+        "map_kpa": -1.0777766704559326,
+        "battery_v": 0.41835781931877136,
+        "vibratii_relanti": -0.8816367983818054
+      }
+    },
+    {
+      "index": 1262,
+      "y_true": 1,
+      "y_pred": 0,
+      "prob_defect": 0.29731646180152893,
+      "features_scaled": {
+        "km": -0.8418004512786865,
+        "vechime_ani": -0.6565040946006775,
+        "zile_de_la_ultima_revizie": -1.2693281173706055,
+        "coolant_temp": -1.4345961809158325,
+        "oil_temp": 1.2724206447601318,
+        "oil_pressure": 0.42586639523506165,
+        "maf": 0.9670466780662537,
+        "map_kpa": -1.0940605401992798,
+        "battery_v": -0.4448929727077484,
+        "vibratii_relanti": -0.3471274971961975
+      }
+    },
+    {
+      "index": 106,
+      "y_true": 1,
+      "y_pred": 0,
+      "prob_defect": 0.3013334572315216,
+      "features_scaled": {
+        "km": -1.3176593780517578,
+        "vechime_ani": 0.7852546572685242,
+        "zile_de_la_ultima_revizie": -1.538705587387085,
+        "coolant_temp": -0.05707767605781555,
+        "oil_temp": 0.03170301392674446,
+        "oil_pressure": -0.037531688809394836,
+        "maf": -0.6404175758361816,
+        "map_kpa": -0.07376927137374878,
+        "battery_v": -0.05131261795759201,
+        "vibratii_relanti": 0.21380747854709625
+      }
+    },
+    {
+      "index": 191,
+      "y_true": 1,
+      "y_pred": 0,
+      "prob_defect": 0.3020048141479492,
+      "features_scaled": {
+        "km": -1.377958059310913,
+        "vechime_ani": 1.3542300462722778,
+        "zile_de_la_ultima_revizie": -1.4074103832244873,
+        "coolant_temp": -0.9996402263641357,
+        "oil_temp": 0.3985772132873535,
+        "oil_pressure": -0.4506548047065735,
+        "maf": 0.7721132040023804,
+        "map_kpa": -0.237873375415802,
+        "battery_v": -1.399247407913208,
+        "vibratii_relanti": 0.05210268124938011
+      }
+    },
+    {
+      "index": 1062,
+      "y_true": 1,
+      "y_pred": 0,
+      "prob_defect": 0.3031957149505615,
+      "features_scaled": {
+        "km": -0.624119222164154,
+        "vechime_ani": 1.4275308847427368,
+        "zile_de_la_ultima_revizie": -1.1698787212371826,
+        "coolant_temp": -1.4825443029403687,
+        "oil_temp": 0.09002010524272919,
+        "oil_pressure": -0.21579641103744507,
+        "maf": 0.9649614095687866,
+        "map_kpa": -0.7059345841407776,
+        "battery_v": -0.2424762099981308,
+        "vibratii_relanti": 0.26561447978019714
+      }
+    },
+    {
+      "index": 36,
+      "y_true": 1,
+      "y_pred": 0,
+      "prob_defect": 0.30358508229255676,
+      "features_scaled": {
+        "km": -0.29120907187461853,
+        "vechime_ani": -1.198393702507019,
+        "zile_de_la_ultima_revizie": 0.817359209060669,
+        "coolant_temp": 0.5993949174880981,
+        "oil_temp": 1.437021017074585,
+        "oil_pressure": 1.0514127016067505,
+        "maf": -2.0556061267852783,
+        "map_kpa": -0.5455533862113953,
+        "battery_v": 0.952613115310669,
+        "vibratii_relanti": -0.6838611960411072
+      }
+    },
+    {
+      "index": 1036,
+      "y_true": 1,
+      "y_pred": 0,
+      "prob_defect": 0.30646562576293945,
+      "features_scaled": {
+        "km": -1.0064135789871216,
+        "vechime_ani": -0.9357482194900513,
+        "zile_de_la_ultima_revizie": 0.7458289861679077,
+        "coolant_temp": 0.7588112354278564,
+        "oil_temp": -0.007043443154543638,
+        "oil_pressure": 0.206769660115242,
+        "maf": -1.157062292098999,
+        "map_kpa": -1.2324059009552002,
+        "battery_v": 0.7978116273880005,
+        "vibratii_relanti": -0.3007499575614929
+      }
+    }
+  ],
+  "metadata": {
+    "run_id": "run_20260211_233742",
+    "created_at": "2026-02-11T23:38:11",
+    "save_name": "optimized_model.pt",
+    "scaler_rel": "config/scaler.pkl",
+    "scaler_path_resolved": "D:\\Proiect_RN\\Proiect_RN\\config\\scaler.pkl",
+    "feature_count": 10,
+    "best_auc": 0.9756538992408557,
+    "best_epoch": 16,
+    "threshold_auto": 0.3068593740463257,
+    "threshold_rule": "max_fpr",
+    "max_fpr": 0.13,
+    "loss_name": "focal",
+    "alpha": 0.55,
+    "gamma": 2.0,
+    "batch_size": 64,
+    "lr": 0.0002,
+    "weight_decay": 0.0001,
+    "sampler": "weighted_random",
+    "device": "cpu"
+  }
+}

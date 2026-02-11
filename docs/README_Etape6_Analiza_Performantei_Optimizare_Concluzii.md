@@ -56,7 +56,7 @@ Aceasta etapa corespunde punctelor:
 
 ---
 
-# 2) Rezultate obtinute (azi)
+# 2) Rezultate obtinute 
 
 ## 2.1 Antrenare model optimizat
 **Output relevant:**
@@ -84,7 +84,7 @@ Rulare:
 
 ---
 
-# 3) Livrabile Etapa 6 (conform cerinte)
+# 3) Livrabile Etapa 6 
 
 ## 3.1 Fisiere obligatorii in repository
 

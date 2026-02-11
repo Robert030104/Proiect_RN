@@ -1,5 +1,6 @@
 from pathlib import Path
 import sys
+import json
 import pickle
 import numpy as np
 import streamlit as st
@@ -18,7 +19,7 @@ def get_root() -> Path:
 
 @st.cache_resource
 def load_scaler(root: Path):
-    p = root / "scaler.pkl"
+    p = root / "config" / "scaler.pkl"
     if not p.exists():
         raise FileNotFoundError(f"Lipseste scaler.pkl: {p}")
     with open(p, "rb") as f:
@@ -37,7 +38,6 @@ def load_model(root: Path):
         raise FileNotFoundError(f"Lipseste modelul optimizat: {model_path}")
 
     ckpt = torch.load(model_path, map_location="cpu")
-
     if "state_dict" not in ckpt:
         raise ValueError("Checkpoint invalid: lipseste cheia 'state_dict'.")
 
@@ -63,13 +63,22 @@ def load_model(root: Path):
         "thr": thr,
         "thr_src": thr_src,
         "max_fpr": float(ckpt.get("max_fpr", 0.13)),
-        "pos_mult": float(ckpt.get("pos_mult", 1.0)),
         "loss_name": str(ckpt.get("loss_name", "bce")),
         "best_auc": float(ckpt.get("best_auc", -1.0)),
         "best_epoch": int(ckpt.get("best_epoch", -1)),
     }
 
     return model, meta, model_path
+
+
+@st.cache_resource
+def load_final_metrics(root: Path):
+    p = root / "results" / "final_metrics.json"
+    if not p.exists():
+        return None, p
+    with open(p, "r", encoding="utf-8") as f:
+        data = json.load(f)
+    return data, p
 
 
 def clamp(x: float, lo: float, hi: float) -> float:
@@ -226,7 +235,7 @@ def rule_recommendations(raw: dict):
 
 
 def build_raw_from_ui(ui: dict):
-    raw = {
+    return {
         "km": float(ui["km"]),
         "vechime_ani": float(ui["vechime_ani"]),
         "zile_de_la_ultima_revizie": float(ui["zile_revizie"]),
@@ -238,7 +247,6 @@ def build_raw_from_ui(ui: dict):
         "battery_v": float(ui["battery_v"]),
         "vibratii_relanti": float(ui["vibratii_relanti"]),
     }
-    return raw
 
 
 st.set_page_config(page_title="Predictie defect auto (RN) - V5", page_icon="🚗", layout="centered")
@@ -250,6 +258,7 @@ root = get_root()
 try:
     feature_names, mean, scale, scaler_path = load_scaler(root)
     model, meta, model_path = load_model(root)
+    final_metrics, final_metrics_path = load_final_metrics(root)
 except Exception as e:
     st.error(str(e))
     st.stop()
@@ -259,73 +268,92 @@ with st.expander("Detalii model (informativ)", expanded=False):
     st.write(f"Scaler: `{scaler_path}`")
     st.write(f"Features: **{len(feature_names)}**")
     st.write(f"Prag: **{meta['thr']:.3f}** ({meta['thr_src']})")
-    st.write(f"Best AUC: **{meta['best_auc']:.4f}** | Best epoch: **{meta['best_epoch']}**")
-    st.write(f"Loss: **{meta['loss_name']}** | pos_mult: **{meta['pos_mult']:.2f}** | max_fpr: **{meta['max_fpr']:.3f}**")
+    st.write(f"Best AUC (val): **{meta['best_auc']:.4f}** | Best epoch: **{meta['best_epoch']}**")
+    st.write(f"Loss: **{meta['loss_name']}** | max_fpr: **{meta['max_fpr']:.3f}**")
+
+    if final_metrics is not None:
+        acc = final_metrics.get("accuracy", None)
+        f1 = final_metrics.get("f1", None)
+        auc = final_metrics.get("auc", None)
+        if acc is not None or f1 is not None or auc is not None:
+            st.write("Metrici pe TEST (din results/final_metrics.json):")
+            if acc is not None:
+                st.write(f"- Accuracy: **{float(acc):.4f}**")
+            if f1 is not None:
+                st.write(f"- F1: **{float(f1):.4f}**")
+            if auc is not None:
+                st.write(f"- AUC: **{float(auc):.4f}**")
+    else:
+        st.write(f"Metrici pe TEST: lipseste `{final_metrics_path}` (ruleaza evaluare_model.py).")
 
 st.subheader("Masurare curenta")
 
-c1, c2 = st.columns(2)
-with c1:
-    km = st.number_input("Kilometraj total (km)", min_value=0, value=150000, step=1000)
-    vechime_ani = st.number_input("Vechime (ani)", min_value=0, value=8, step=1)
-    zile_revizie = st.number_input("Zile de la ultima revizie", min_value=0, value=120, step=10)
-    map_kpa = st.number_input("MAP (kPa)", min_value=0.0, value=45.0, step=1.0, format="%.2f")
-    maf = st.number_input("MAF (g/s)", min_value=0.0, value=11.0, step=0.1, format="%.2f")
+with st.form("predict_form"):
+    c1, c2 = st.columns(2)
+    with c1:
+        km = st.number_input("Kilometraj total (km)", min_value=0, value=150000, step=1000)
+        vechime_ani = st.number_input("Vechime (ani)", min_value=0, value=8, step=1)
+        zile_revizie = st.number_input("Zile de la ultima revizie", min_value=0, value=120, step=10)
+        map_kpa = st.number_input("MAP (kPa)", min_value=0.0, value=45.0, step=1.0, format="%.2f")
+        maf = st.number_input("MAF (g/s)", min_value=0.0, value=11.0, step=0.1, format="%.2f")
 
-with c2:
-    coolant_temp = st.number_input("Temp. lichid racire (°C)", min_value=0.0, value=92.0, step=0.5, format="%.2f")
-    oil_temp = st.number_input("Temp. ulei (°C)", min_value=0.0, value=98.0, step=0.5, format="%.2f")
-    oil_pressure = st.number_input("Presiune ulei (bar)", min_value=0.0, value=2.4, step=0.05, format="%.3f")
-    battery_v = st.number_input("Baterie (V)", min_value=0.0, value=13.2, step=0.05, format="%.2f")
-    vibratii_relanti = st.number_input("Vibratii relanti", min_value=0.0, value=1.2, step=0.05, format="%.2f")
+    with c2:
+        coolant_temp = st.number_input("Temp. lichid racire (C)", min_value=0.0, value=92.0, step=0.5, format="%.2f")
+        oil_temp = st.number_input("Temp. ulei (C)", min_value=0.0, value=98.0, step=0.5, format="%.2f")
+        oil_pressure = st.number_input("Presiune ulei (bar)", min_value=0.0, value=2.4, step=0.05, format="%.3f")
+        battery_v = st.number_input("Baterie (V)", min_value=0.0, value=13.2, step=0.05, format="%.2f")
+        vibratii_relanti = st.number_input("Vibratii relanti", min_value=0.0, value=1.2, step=0.05, format="%.2f")
 
-st.divider()
+    submitted = st.form_submit_button("Ruleaza predictia")
 
-ui_vals = {
-    "km": km,
-    "vechime_ani": vechime_ani,
-    "zile_revizie": zile_revizie,
-    "map_kpa": map_kpa,
-    "maf": maf,
-    "coolant_temp": coolant_temp,
-    "oil_temp": oil_temp,
-    "oil_pressure": oil_pressure,
-    "battery_v": battery_v,
-    "vibratii_relanti": vibratii_relanti,
-}
+if submitted:
+    ui_vals = {
+        "km": km,
+        "vechime_ani": vechime_ani,
+        "zile_revizie": zile_revizie,
+        "map_kpa": map_kpa,
+        "maf": maf,
+        "coolant_temp": coolant_temp,
+        "oil_temp": oil_temp,
+        "oil_pressure": oil_pressure,
+        "battery_v": battery_v,
+        "vibratii_relanti": vibratii_relanti,
+    }
 
-raw = build_raw_from_ui(ui_vals)
-raw = compute_derived(raw)
+    raw = build_raw_from_ui(ui_vals)
+    raw = compute_derived(raw)
 
-missing = [f for f in feature_names if f not in raw]
-for f in missing:
-    raw[f] = 0.0
+    missing = [f for f in feature_names if f not in raw]
+    for f in missing:
+        raw[f] = 0.0
 
-X = np.array([raw[f] for f in feature_names], dtype=np.float32).reshape(1, -1)
-X_scaled = (X - mean.reshape(1, -1)) / (scale.reshape(1, -1) + 1e-12)
+    X = np.array([raw[f] for f in feature_names], dtype=np.float32).reshape(1, -1)
+    X_scaled = (X - mean.reshape(1, -1)) / (scale.reshape(1, -1) + 1e-12)
 
-with torch.no_grad():
-    logits = model(torch.tensor(X_scaled, dtype=torch.float32))
-    prob = float(torch.sigmoid(logits).cpu().numpy().reshape(-1)[0])
+    with torch.no_grad():
+        logits = model(torch.tensor(X_scaled, dtype=torch.float32))
+        prob = float(torch.sigmoid(logits).cpu().numpy().reshape(-1)[0])
 
-thr = float(meta["thr"])
-pred_defect = prob >= thr
+    thr = float(meta["thr"])
+    pred_defect = prob >= thr
 
-critical, recs = rule_recommendations(raw)
-min_km, max_km, km_text = estimate_km_remaining(prob, critical)
+    critical, recs = rule_recommendations(raw)
+    min_km, max_km, km_text = estimate_km_remaining(prob, critical)
 
-st.subheader("📊 Rezultat")
-st.metric("Probabilitate defect", f"{prob*100:.1f}%")
-st.write(f"**Predictie:** {'❌ DEFECT PROBABIL' if pred_defect else '✅ OK'}  (prag: {thr:.3f})")
-st.write(f"**Estimare km ramasi (orientativ):** {min_km} – {max_km} km")
-st.caption(km_text)
+    st.subheader("📊 Rezultat")
+    st.metric("Probabilitate defect", f"{prob*100:.1f}%")
+    st.write(f"**Predictie:** {'❌ DEFECT PROBABIL' if pred_defect else '✅ OK'}  (prag: {thr:.3f} / {meta['thr_src']})")
+    st.write(f"**Estimare km ramasi (orientativ):** {min_km} - {max_km} km")
+    st.caption(km_text)
 
-st.subheader("🔧 Recomandari ")
-if recs:
-    for r in recs:
-        st.write(f"- {r}")
+    st.subheader("🔧 Recomandari")
+    if recs:
+        for r in recs:
+            st.write(f"- {r}")
+    else:
+        st.write("Nu exista semnale clare pe reguli. Daca apar simptome, fa o diagnoza OBD si verificari de rutina.")
+
+    with st.expander("Date folosite (debug)", expanded=False):
+        st.json({k: raw.get(k, None) for k in sorted(raw.keys())})
 else:
-    st.write("Nu exista semnale clare pe reguli. Daca apar simptome, fa o diagnoza OBD si verificari de rutina.")
-
-with st.expander("Date folosite (debug)", expanded=False):
-    st.json({k: raw.get(k, None) for k in sorted(raw.keys())})
+    st.info("Completeaza valorile si apasa butonul: Ruleaza predictia.")
